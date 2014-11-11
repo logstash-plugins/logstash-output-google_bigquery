@@ -17,6 +17,7 @@
 # limitations under the License.
 require "logstash/outputs/base"
 require "logstash/namespace"
+require "logstash/json"
 
 # Summary: plugin to upload log events to Google BigQuery (BQ), rolling
 # files based on the date pattern provided as a configuration setting. Events
@@ -471,7 +472,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Uploads a local file to the configured bucket.
   def get_job_status(job_id)
     begin
-      require 'json'
       @logger.debug("BQ: check job status.",
                     :job_id => job_id)
       get_result = @client.execute(:api_method => @bq.jobs.get,
@@ -479,7 +479,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                                      'jobId' => job_id,
                                      'projectId' => @project_id
                                    })
-      response = JSON.parse(get_result.response.body)
+      response = LogStash::Json.load(get_result.response.body)
       @logger.debug("BQ: successfully invoked API.",
                     :response => response)
 
@@ -502,7 +502,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Uploads a local file to the configured bucket.
   def upload_object(filename)
     begin
-      require 'json'
       table_id = @table_prefix + "_" + get_date_pattern(filename)
       # BQ does not accept anything other than alphanumeric and _
       # Ref: https://developers.google.com/bigquery/browser-tool-quickstart?hl=en
@@ -536,7 +535,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                                       },
                                       :media => media)
 
-      job_id = JSON.parse(insert_result.response.body)["jobReference"]["jobId"]
+      job_id = LogStash::Json.load(insert_result.response.body)["jobReference"]["jobId"]
       @logger.debug("BQ: multipart insert",
                     :job_id => job_id)
       return job_id
