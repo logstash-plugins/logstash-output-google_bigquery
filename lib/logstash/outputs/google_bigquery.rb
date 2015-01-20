@@ -85,7 +85,6 @@ require "logstash/namespace"
 # be uploaded to BQ.
 class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config_name "google_bigquery"
-  milestone 1
 
   # Google Cloud Project ID (number, not Project Name!).
   config :project_id, :validate => :string, :required => true
