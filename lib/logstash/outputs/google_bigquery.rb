@@ -66,7 +66,7 @@ require "logstash/json"
 #    google_bigquery {
 #      project_id => "folkloric-guru-278"                        (required)
 #      dataset => "logs"                                         (required)
-#      csv_schema => "path:STRING,status:INTEGER,score:FLOAT"    (required)
+#      csv_schema => "path:STRING,status:INTEGER,score:FLOAT"    (required*)
 #      key_path => "/path/to/privatekey.p12"                     (required)
 #      key_password => "notasecret"                              (optional)
 #      service_account => "1234@developer.gserviceaccount.com"   (required)
@@ -78,6 +78,8 @@ require "logstash/json"
 #      deleter_interval_secs => 60                               (optional)
 #    }
 # }
+#
+# * Specify either a csv_schema or a json_schema.
 #
 # Improvements TODO list:
 # - Refactor common code between Google BQ and GCS plugins.
@@ -100,7 +102,22 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Schema for log data. It must follow this format:
   # <field1-name>:<field1-type>,<field2-name>:<field2-type>,...
   # Example: path:STRING,status:INTEGER,score:FLOAT
-  config :csv_schema, :validate => :string, :required => true
+  config :csv_schema, :validate => :string, :required => false, :default => nil
+
+  # Schema for log data, as a hash. Example:
+  # json_schema => {
+  #     fields => [{
+  #         name => "timestamp"
+  #         type => "TIMESTAMP"
+  #     }, {
+  #         name => "host"
+  #         type => "STRING"
+  #     }, {
+  #         name => "message"
+  #         type => "STRING"
+  #     }]
+  # }
+  config :json_schema, :validate => :hash, :required => false, :default => nil
 
   # Indicates if BigQuery should allow extra values that are not represented in the table schema.
   # If true, the extra values are ignored. If false, records with extra columns are treated as bad records, and if there are too many bad records, an invalid error is returned in the job result. The default value is false.
@@ -148,25 +165,30 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
     @logger.debug("BQ: register plugin")
 
-    @fields = Array.new
+    if !@csv_schema.nil?
+      @fields = Array.new
 
-    CSV.parse(@csv_schema.gsub('\"', '""')).flatten.each do |field|
-      temp = field.strip.split(":")
+      CSV.parse(@csv_schema.gsub('\"', '""')).flatten.each do |field|
+        temp = field.strip.split(":")
 
-      # Check that the field in the schema follows the format (<name>:<value>)
-      if temp.length != 2
-        raise "BigQuery schema must follow the format <field-name>:<field-value>"
+        # Check that the field in the schema follows the format (<name>:<value>)
+        if temp.length != 2
+          raise "BigQuery schema must follow the format <field-name>:<field-value>"
+        end
+
+        @fields << { "name" => temp[0], "type" => temp[1] }
       end
 
-      @fields << { "name" => temp[0], "type" => temp[1] }
-    end
+      # Check that we have at least one field in the schema
+      if @fields.length == 0
+        raise "BigQuery schema must contain at least one field"
+      end
 
-    # Check that we have at least one field in the schema
-    if @fields.length == 0
-      raise "BigQuery schema must contain at least one field"
+      @json_schema = { "fields" => @fields }
     end
-
-    @json_schema = { "fields" => @fields }
+    if @json_schema.nil?
+      raise "Configuration must provide either json_schema or csv_schema."
+    end
 
     @upload_queue = Queue.new
     @delete_queue = Queue.new
