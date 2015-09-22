@@ -216,8 +216,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   public
-  def teardown
-    @logger.debug("BQ: teardown method called")
+  def close
+    @logger.debug("BQ: close method called")
 
     @temp_file.flush()
     @temp_file.close()
