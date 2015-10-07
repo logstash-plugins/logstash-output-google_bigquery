@@ -182,7 +182,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # file, flushing depending on flush interval configuration.
   public
   def receive(event)
-    return unless output?(event)
+    
 
     @logger.debug("BQ: receive method called", :event => event)
 
