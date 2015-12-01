@@ -494,6 +494,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @client.authorization = service_account.authorize
   end
 
+  def raise_if_error(response)
+    if response.has_key?("error")
+      raise response["error"]["message"]
+    end
+  end
+
   ##
   # Uploads a local file to the configured bucket.
   def get_job_status(job_id)
@@ -509,9 +515,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       @logger.debug("BQ: successfully invoked API.",
                     :response => response)
 
-      if response.has_key?("error")
-        raise response["error"]
-      end
+      raise_if_error(response)
 
       # Successful invocation
       contents = response["status"]
@@ -561,7 +565,11 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                                       },
                                       :media => media)
 
-      job_id = LogStash::Json.load(insert_result.response.body)["jobReference"]["jobId"]
+      response_body = LogStash::Json.load(insert_result.response.body)
+
+      raise_if_error(response_body)
+
+      job_id = response_body["jobReference"]["jobId"]
       @logger.debug("BQ: multipart insert",
                     :job_id => job_id)
       return job_id
