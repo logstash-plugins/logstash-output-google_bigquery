@@ -94,8 +94,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config :dataset, :validate => :string, :required => true
 
   # BigQuery table ID prefix to be used when creating new tables for log data.
-  # Table name will be <table_prefix>_<date>
+  # Table name will be <table_prefix><table_separator><date>
   config :table_prefix, :validate => :string, :default => "logstash"
+
+  # BigQuery table separator to be added between the table_prefix and the
+  # date suffix.
+  config :table_separator, :validate => :string, :default => "_"
 
   # Schema for log data. It must follow this format:
   # <field1-name>:<field1-type>,<field2-name>:<field2-type>,...
@@ -502,7 +506,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Uploads a local file to the configured bucket.
   def upload_object(filename)
     begin
-      table_id = @table_prefix + "_" + get_date_pattern(filename)
+      table_id = @table_prefix + @table_separator + get_date_pattern(filename)
       # BQ does not accept anything other than alphanumeric and _
       # Ref: https://developers.google.com/bigquery/browser-tool-quickstart?hl=en
       table_id.tr!(':-','_')
