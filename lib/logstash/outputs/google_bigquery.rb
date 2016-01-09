@@ -309,7 +309,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         job_id = delete_item["job_id"]
         filename = delete_item["filename"]
         job_status = get_job_status(job_id)
-        case job_status["state"]
+        case job_status["status"]["state"]
         when "DONE"
           if job_status.has_key?("errorResult")
             @logger.error("BQ: job failed, please enable debug and check full "\
@@ -333,12 +333,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                         :job_status => job_status)
           @delete_queue << delete_item
         else
-          @logger.error("BQ: unknown job status, please enable debug and "\
-                        "check full response (probably the issue is an "\
-                        "incompatible schema). NOT deleting local file yet.",
+          @logger.error("BQ: unknown job status, NOT deleting local file yet.",
                         :job_id => job_id,
                         :filename => filename,
                         :job_status => job_status)
+          File.open(filename + ".err", 'w') do |file|
+            file.write(LogStash::Json.dump(job_status))
+          end
         end
 
         sleep @deleter_interval_secs
@@ -528,8 +529,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       raise_if_error(response)
 
       # Successful invocation
-      contents = response["status"]
-      return contents
+      return response
     rescue => e
       @logger.error("BQ: failed to check status", :exception => e)
       # TODO(rdc): limit retries?
