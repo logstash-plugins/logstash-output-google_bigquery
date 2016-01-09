@@ -296,6 +296,14 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   def initialize_deleter
     @uploader = Thread.new do
       @logger.debug("BQ: starting deleter")
+      Dir.glob(get_undated_path() + "*.bqjob").each do |fn|
+        job_id = File.open(fn, 'r') { |f| f.read }
+        filename = @temp_directory + File::SEPARATOR + File.basename(fn, ".bqjob")
+        @logger.debug("BQ: resuming job.",
+                      :job_id => job_id,
+                      :filename => filename)
+        @delete_queue << { "filename" => filename, "job_id" => job_id }
+      end
       while true
         delete_item = @delete_queue.pop
         job_id = delete_item["job_id"]
@@ -315,7 +323,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                           :job_id => job_id,
                           :filename => filename,
                           :job_status => job_status)
-            File.delete(filename)
+            File.delete(filename) if File.exist?(filename)
+            File.delete(filename + ".bqjob") if File.exist?(filename + ".bqjob")
           end
         when "PENDING", "RUNNING"
           @logger.debug("BQ: job is not done, NOT deleting local file yet.",
@@ -371,6 +380,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         if File.size(filename) > 0
           job_id = upload_object(filename)
           @delete_queue << { "filename" => filename, "job_id" => job_id }
+          File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
         else
           @logger.debug("BQ: skipping empty file.")
           @logger.debug("BQ: delete local temporary file ",
