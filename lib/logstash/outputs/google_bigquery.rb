@@ -565,6 +565,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                                       },
                                       :media => media)
 
+      media.close()
       response_body = LogStash::Json.load(insert_result.response.body)
 
       raise_if_error(response_body)
