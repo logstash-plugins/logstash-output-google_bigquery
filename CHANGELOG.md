@@ -1,3 +1,5 @@
+# 2.0.4
+  - New dependency requirements for logstash-core for the 5.0 release
 ## 2.0.3
  - Add support for specifying schema as a hash
  - Bubble up error message that BQ returns on an error
