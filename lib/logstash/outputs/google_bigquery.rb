@@ -89,6 +89,8 @@ require "logstash/json"
 class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config_name "google_bigquery"
 
+  concurrency :single
+
   # Google Cloud Project ID (number, not Project Name!).
   config :project_id, :validate => :string, :required => true
 
@@ -208,12 +210,10 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # file, flushing depending on flush interval configuration.
   public
   def receive(event)
-    
-
     @logger.debug("BQ: receive method called", :event => event)
 
     # Message must be written as json
-    message = event.to_json
+    message = LogStash::Json.dump(event.to_hash)
     # Remove "@" from property names
     message = message.gsub(/\"@(\w+)\"/, '"\1"')
 
