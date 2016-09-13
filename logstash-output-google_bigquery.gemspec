@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
 
   s.name            = 'logstash-output-google_bigquery'
-  s.version         = '2.0.5'
+  s.version         = '2.0.6'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "Plugin to upload log events to Google BigQuery (BQ)"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
 
   # Gem dependencies
   s.add_runtime_dependency "logstash-core-plugin-api", "~> 1.0"
-  s.add_runtime_dependency 'google-api-client'
+  s.add_runtime_dependency 'google-api-client', "~> 0.8.7" # version 0.9.x needs ruby 2.x
 
   s.add_development_dependency 'logstash-devutils'
 end
