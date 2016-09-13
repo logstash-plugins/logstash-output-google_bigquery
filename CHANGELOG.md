@@ -1,3 +1,6 @@
+# 3.0.1
+  - Pin version of gems whose latest releases only work with ruby 2.x
+
 ## 3.0.0
   - Breaking: Updated plugin to use new Java Event APIs
   - relax contrains on logstash-core-plugin-api
