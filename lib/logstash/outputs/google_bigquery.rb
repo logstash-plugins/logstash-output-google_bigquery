@@ -1,4 +1,6 @@
 
+# [source,txt]
+# -----
 # Author: Rodrigo De Castro <rdc@google.com>
 # Date: 2013-09-20
 #
@@ -15,6 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# -----
 require "logstash/outputs/base"
 require "logstash/namespace"
 require "logstash/json"
@@ -25,10 +28,10 @@ require "logstash/json"
 # it to the configured BigQuery dataset.
 #
 # VERY IMPORTANT:
-# 1 - To make good use of BigQuery, your log events should be parsed and
+# . To make good use of BigQuery, your log events should be parsed and
 # structured. Consider using grok to parse your events into fields that can
 # be uploaded to BQ.
-# 2 - You must configure your plugin so it gets events with the same structure,
+# . You must configure your plugin so it gets events with the same structure,
 # so the BigQuery schema suits them. In case you want to upload log events
 # with different structures, you can utilize multiple configuration blocks,
 # separating different log events with Logstash conditionals. More details on
@@ -43,16 +46,16 @@ require "logstash/json"
 # https://developers.google.com/storage/docs/authentication#service_accounts
 #
 # Recommendations:
-
-# a - Experiment with the settings depending on how much log data you generate,
+#
+# . Experiment with the settings depending on how much log data you generate,
 # your needs to see "fresh" data, and how much data you could lose in the event
 # of crash. For instance, if you want to see recent data in BQ quickly, you
 # could configure the plugin to upload data every minute or so (provided you
 # have enough log events to justify that). Note also, that if uploads are too
 # frequent, there is no guarantee that they will be imported in the same order,
 # so later data may be available before earlier data.
-
-# b - BigQuery charges for storage and for queries, depending on how much data
+#
+# . BigQuery charges for storage and for queries, depending on how much data
 # it reads to perform a query. These are other aspects to consider when
 # considering the date pattern which will be used to create new tables and also
 # how to compose the queries when using BQ. For more info on BigQuery Pricing,
@@ -62,11 +65,13 @@ require "logstash/json"
 # USAGE:
 # This is an example of logstash config:
 #
+# [source,json]
+# --------------------------
 # output {
 #    google_bigquery {
 #      project_id => "folkloric-guru-278"                        (required)
 #      dataset => "logs"                                         (required)
-#      csv_schema => "path:STRING,status:INTEGER,score:FLOAT"    (required*)
+#      csv_schema => "path:STRING,status:INTEGER,score:FLOAT"    (required) <1>
 #      key_path => "/path/to/privatekey.p12"                     (required)
 #      key_password => "notasecret"                              (optional)
 #      service_account => "1234@developer.gserviceaccount.com"   (required)
@@ -78,13 +83,14 @@ require "logstash/json"
 #      deleter_interval_secs => 60                               (optional)
 #    }
 # }
+# --------------------------
 #
-# * Specify either a csv_schema or a json_schema.
+# <1> Specify either a csv_schema or a json_schema.
 #
 # Improvements TODO list:
-# - Refactor common code between Google BQ and GCS plugins.
-# - Turn Google API code into a Plugin Mixin (like AwsConfig).
-# - There's no recover method, so if logstash/plugin crashes, files may not
+# * Refactor common code between Google BQ and GCS plugins.
+# * Turn Google API code into a Plugin Mixin (like AwsConfig).
+# * There's no recover method, so if logstash/plugin crashes, files may not
 # be uploaded to BQ.
 class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config_name "google_bigquery"
