@@ -1,3 +1,6 @@
+# 3.0.2
+  - Docs: Fix doc formatting
+
 # 3.0.1
   - Pin version of gems whose latest releases only work with ruby 2.x
 
