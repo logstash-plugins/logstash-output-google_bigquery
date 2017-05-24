@@ -317,7 +317,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         job_status = get_job_status(job_id)
         case job_status["status"]["state"]
         when "DONE"
-          if job_status.has_key?("errorResult")
+          if job_status["status"].has_key?("errorResult")
             @logger.error("BQ: job failed, please enable debug and check full "\
                           "response (probably the issue is an incompatible "\
                           "schema). NOT deleting local file.",
