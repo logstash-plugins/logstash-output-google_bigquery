@@ -512,13 +512,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   def raise_if_error(response)
-    if response.has_key?("error")
-      raise response["error"]["message"]
+    if response["status"].has_key?("errorResult")
+      raise response["status"]["errorResult"]["message"]
     end
   end
 
   ##
-  # Uploads a local file to the configured bucket.
+  # Get the job status for a given job ID
   def get_job_status(job_id)
     begin
       @logger.debug("BQ: check job status.",
@@ -531,8 +531,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       response = LogStash::Json.load(get_result.response.body)
       @logger.debug("BQ: successfully invoked API.",
                     :response => response)
-
-      raise_if_error(response)
 
       # Successful invocation
       return response
