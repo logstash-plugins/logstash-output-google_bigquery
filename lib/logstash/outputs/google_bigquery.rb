@@ -300,7 +300,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   #
   # Deleter is done in a separate thread, not holding the receive method above.
   def initialize_deleter
-    @uploader = Thread.new do
+    @deleter = Thread.new do
       @logger.debug("BQ: starting deleter")
       Dir.glob(get_undated_path() + "*.bqjob").each do |fn|
         job_id = File.open(fn, 'r') { |f| f.read }
