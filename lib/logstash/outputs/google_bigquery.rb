@@ -300,7 +300,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   #
   # Deleter is done in a separate thread, not holding the receive method above.
   def initialize_deleter
-    @uploader = Thread.new do
+    @deleter = Thread.new do
       @logger.debug("BQ: starting deleter")
       Dir.glob(get_undated_path() + "*.bqjob").each do |fn|
         job_id = File.open(fn, 'r') { |f| f.read }
@@ -317,7 +317,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         job_status = get_job_status(job_id)
         case job_status["status"]["state"]
         when "DONE"
-          if job_status.has_key?("errorResult")
+          if job_status["status"].has_key?("errorResult")
             @logger.error("BQ: job failed, please enable debug and check full "\
                           "response (probably the issue is an incompatible "\
                           "schema). NOT deleting local file.",
@@ -512,13 +512,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   def raise_if_error(response)
-    if response.has_key?("error")
-      raise response["error"]["message"]
+    if response["status"].has_key?("errorResult")
+      raise response["status"]["errorResult"]["message"]
     end
   end
 
   ##
-  # Uploads a local file to the configured bucket.
+  # Get the job status for a given job ID
   def get_job_status(job_id)
     begin
       @logger.debug("BQ: check job status.",
@@ -531,8 +531,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       response = LogStash::Json.load(get_result.response.body)
       @logger.debug("BQ: successfully invoked API.",
                     :response => response)
-
-      raise_if_error(response)
 
       # Successful invocation
       return response
