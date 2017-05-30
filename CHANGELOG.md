@@ -1,3 +1,6 @@
+# 3.1.0
+  - Fix error checking in the plugin to properly handle failed inserts
+
 # 3.0.2
   - Docs: Fix doc formatting
 
