@@ -90,8 +90,6 @@ require "logstash/json"
 # Improvements TODO list:
 # * Refactor common code between Google BQ and GCS plugins.
 # * Turn Google API code into a Plugin Mixin (like AwsConfig).
-# * There's no recover method, so if logstash/plugin crashes, files may not
-# be uploaded to BQ.
 class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config_name "google_bigquery"
 
@@ -206,6 +204,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @delete_queue = Queue.new
     @last_flush_cycle = Time.now
     initialize_temp_directory()
+    recover_temp_directories()
     initialize_current_log()
     initialize_google_client()
     initialize_uploader()
@@ -296,20 +295,62 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   ##
+  # If logstash fails for any reason, this method will attempt to recover any
+  # files that were in flight during the crash. The recovery works in two
+  # phases. All files with .bqjob file entries will be put into the
+  # delete_queue. All files without .bqjob files will be put into the
+  # upload_queue.
+  #
+  # If a temp_directory configuration is defined, this method will look in the
+  # defined directory. If temp_directory is not defined, this method will look
+  # in all /tmp/logstash-bq-* directories.
+  #
+  # Note that there is still a small race condition where a file might have
+  # been uploaded, but the .bqjob file wasn't saved yet. In such a case, the
+  # file will be loaded into BigQuery twice.
+  def recover_temp_directories
+    if @temp_directory.empty?
+      Dir.entries('/tmp').select{
+        |entry| File.directory? File.join('/tmp', entry) and entry.start_with?('logstash-bq-')
+      }.each {
+        |entry| recover_temp_directory(File.join('/tmp',entry))
+      }
+    else
+      recover_temp_directory(@temp_directory)
+    end
+  end
+
+  ##
+  # List all files in a directory, and add them to either the upload_queue or
+  # delete_queue.
+  def recover_temp_directory(directory)
+    # Recover files that have been uploaded, but not deleted.
+    Dir.glob(File.join(directory, "*.bqjob")).each do |bqjob_filename|
+      job_id = File.open(bqjob_filename, 'r') {|f| f.read}.strip
+      filename = File.join(directory, File.basename(bqjob_filename, ".bqjob"))
+      @logger.debug("BQ: resuming job.",
+                    :job_id => job_id,
+                    :filename => filename)
+      @delete_queue << { "filename" => filename, "job_id" => job_id }
+    end
+
+    # Recover files that have (probably) not yet been uploaded.
+    Dir.glob(File.join(directory, "*.log")).each do |filename|
+      if !File.exists?(filename + '.bqjob')
+        @logger.debug("BQ: recovering file.",
+                    :filename => filename)
+        @upload_queue << filename
+      end
+    end
+  end
+
+  ##
   # Starts thread to delete uploaded log files once their jobs are done.
   #
   # Deleter is done in a separate thread, not holding the receive method above.
   def initialize_deleter
     @deleter = Thread.new do
       @logger.debug("BQ: starting deleter")
-      Dir.glob(get_undated_path() + "*.bqjob").each do |fn|
-        job_id = File.open(fn, 'r') { |f| f.read }
-        filename = @temp_directory + File::SEPARATOR + File.basename(fn, ".bqjob")
-        @logger.debug("BQ: resuming job.",
-                      :job_id => job_id,
-                      :filename => filename)
-        @delete_queue << { "filename" => filename, "job_id" => job_id }
-      end
       while true
         delete_item = @delete_queue.pop
         job_id = delete_item["job_id"]
@@ -442,7 +483,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       match[:part_num].to_i
     end
 
-    return part_numbers.max if part_numbers.any?
+    return part_numbers.max + 1 if part_numbers.any?
     0
   end
 
@@ -589,7 +630,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                     :job_id => job_id)
       return job_id
     rescue => e
-      @logger.error("BQ: failed to upload file", :exception => e)
+      @logger.error("BQ: failed to upload file. retrying.", :exception => e)
       # TODO(rdc): limit retries?
       sleep 1
       retry
