@@ -135,6 +135,10 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # If true, the extra values are ignored. If false, records with extra columns are treated as bad records, and if there are too many bad records, an invalid error is returned in the job result. The default value is false.
   config :ignore_unknown_values, :validate => :boolean, :default => false
 
+  # Indicates if BigQuery should allow extra values that are not represented in the table schema.
+  # If true, the extra values are ignored. If false, records with extra columns are treated as bad records, and if there are too many bad records, an invalid error is returned in the job result. The default value is false.
+  config :ignore_unknown_values, :validate => :boolean, :default => false
+
   # Path to private key file for Google Service Account.
   config :key_path, :validate => :string, :required => true
 
