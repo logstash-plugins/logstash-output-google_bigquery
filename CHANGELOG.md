@@ -1,3 +1,6 @@
+# 3.2.0
+  - Add file recovery when plugin crashes
+
 # 3.1.0
   - Fix error checking in the plugin to properly handle failed inserts
 
