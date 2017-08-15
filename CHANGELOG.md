@@ -1,3 +1,6 @@
+## 3.2.2
+  - Fix some documentation issues
+
 # 3.2.0
   - Add file recovery when plugin crashes
 
