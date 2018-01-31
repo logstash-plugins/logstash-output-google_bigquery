@@ -203,6 +203,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @upload_queue = Queue.new
     @delete_queue = Queue.new
     @last_flush_cycle = Time.now
+    @mutex = Mutex.new
     initialize_temp_directory()
     recover_temp_directories()
     initialize_current_log()
@@ -222,20 +223,21 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     # Remove "@" from property names
     message = message.gsub(/\"@(\w+)\"/, '"\1"')
 
-    new_base_path = get_base_path()
-
-    # Time to roll file based on the date pattern? Or are we due to upload it to BQ?
-    if (@current_base_path != new_base_path || Time.now - @last_file_time >= @uploader_interval_secs)
-      @logger.debug("BQ: log file will be closed and uploaded",
-                    :filename => File.basename(@temp_file.to_path),
-                    :size => @temp_file.size.to_s,
-                    :uploader_interval_secs => @uploader_interval_secs.to_s)
-      # Close alone does not guarantee that data is physically written to disk,
-      # so flushing it before.
-      @temp_file.fsync()
-      @temp_file.close()
-      initialize_next_log()
-    end
+    @mutex.synchronize {
+      new_base_path = get_base_path()
+      # Time to roll file based on the date pattern? Or are we due to upload it to BQ?
+      if (@current_base_path != new_base_path || Time.now - @last_file_time >= @uploader_interval_secs)
+        @logger.debug("BQ: log file will be closed and uploaded",
+                      :filename => File.basename(@temp_file.to_path),
+                      :size => @temp_file.size.to_s,
+                      :uploader_interval_secs => @uploader_interval_secs.to_s)
+        # Close alone does not guarantee that data is physically written to disk,
+        # so flushing it before.
+        @temp_file.fsync()
+        @temp_file.close()
+        initialize_next_log()
+      end
+    }
 
     @temp_file.write(message)
     @temp_file.write("\n")
@@ -402,39 +404,41 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @uploader = Thread.new do
       @logger.debug("BQ: starting uploader")
       while true
-        filename = @upload_queue.pop
+        @mutex.synchronize {
+          filename = @upload_queue.pop
 
-        # Reenqueue if it is still the current file.
-        if filename == @temp_file.to_path
-          if @current_base_path == get_base_path()
-            if Time.now - @last_file_time < @uploader_interval_secs
-              @logger.debug("BQ: reenqueue as log file is being currently appended to.",
-                            :filename => filename)
-              @upload_queue << filename
-              # If we got here, it means that older files were uploaded, so let's
-              # wait another minute before checking on this file again.
-              sleep @uploader_interval_secs
-              next
-            else
-              @logger.debug("BQ: flush and close file to be uploaded.",
-                            :filename => filename)
-              @temp_file.flush()
-              @temp_file.close()
-              initialize_next_log()
+          # Reenqueue if it is still the current file.
+          if filename == @temp_file.to_path
+            if @current_base_path == get_base_path()
+              if Time.now - @last_file_time < @uploader_interval_secs
+                @logger.debug("BQ: reenqueue as log file is being currently appended to.",
+                              :filename => filename)
+                @upload_queue << filename
+                # If we got here, it means that older files were uploaded, so let's
+                # wait another minute before checking on this file again.
+                sleep @uploader_interval_secs
+                next
+              else
+                @logger.debug("BQ: flush and close file to be uploaded.",
+                              :filename => filename)
+                @temp_file.flush()
+                @temp_file.close()
+                initialize_next_log()
+              end
             end
           end
-        end
 
-        if File.size(filename) > 0
-          job_id = upload_object(filename)
-          @delete_queue << { "filename" => filename, "job_id" => job_id }
-          File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
-        else
-          @logger.debug("BQ: skipping empty file.")
-          @logger.debug("BQ: delete local temporary file ",
-                        :filename => filename)
-          File.delete(filename)
-        end
+          if File.size(filename) > 0
+            job_id = upload_object(filename)
+            @delete_queue << { "filename" => filename, "job_id" => job_id }
+            File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
+          else
+            @logger.debug("BQ: skipping empty file.")
+            @logger.debug("BQ: delete local temporary file ",
+                          :filename => filename)
+            File.delete(filename)
+          end
+        }
 
         sleep @uploader_interval_secs
       end
