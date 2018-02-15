@@ -1,4 +1,3 @@
-
 # [source,txt]
 # -----
 # Author: Rodrigo De Castro <rdc@google.com>
@@ -356,6 +355,15 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         job_id = delete_item["job_id"]
         filename = delete_item["filename"]
         job_status = get_job_status(job_id)
+
+        if job_status["error"]
+          @logger.error("BQ: job error. NOT deleting local file.",
+                        :job_id => job_id,
+                        :filename => filename,
+                        :job_status => job_status)
+          break
+        end
+
         case job_status["status"]["state"]
         when "DONE"
           if job_status["status"].has_key?("errorResult")
@@ -427,8 +435,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
         if File.size(filename) > 0
           job_id = upload_object(filename)
-          @delete_queue << { "filename" => filename, "job_id" => job_id }
-          File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
+          if job_id
+            @delete_queue << { "filename" => filename, "job_id" => job_id }
+            File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
+          else
+            @logger.warn("BQ: skipping bad file.")
+          end
         else
           @logger.debug("BQ: skipping empty file.")
           @logger.debug("BQ: delete local temporary file ",
@@ -445,15 +457,14 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Returns undated path used to construct base path and final full path.
   # This path only includes directory, prefix, and hostname info.
   def get_undated_path
-    return @temp_directory + File::SEPARATOR + @temp_file_prefix + "_" +
-      Socket.gethostname()
+    return @temp_directory + File::SEPARATOR + @temp_file_prefix
   end
 
   ##
   # Returns base path to log file that is invariant regardless of any
   # user options.
   def get_base_path
-    return get_undated_path() + "_" + Time.now.strftime(@date_pattern)
+    return get_undated_path() + "_" + Socket.gethostname() + "_" + Time.now.strftime(@date_pattern)
   end
 
   ##
@@ -466,7 +477,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   ##
   # Returns date from a temporary log file name.
   def get_date_pattern(filename)
-    match = /^#{get_undated_path()}_(?<date>.*)\.part(\d+)\.log$/.match(filename)
+    re = /^#{get_undated_path()}_(?<socket>.*?)_(?<date>.*?)\.part(\d+)\.log$/
+    match = re.match(filename)
+    if ! match
+      @logger.error("Couldn't extract date from filename: ", :filename => filename, :re => re.source)
+      raise "Couldn't extract date from filename"
+    end
     return match[:date]
   end
 
@@ -630,10 +646,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                     :job_id => job_id)
       return job_id
     rescue => e
-      @logger.error("BQ: failed to upload file. retrying.", :exception => e)
-      # TODO(rdc): limit retries?
-      sleep 1
-      retry
+      @logger.error("BQ: failed to upload file.", :filename => filename, :exception => e)
+      return false
     end
   end
 end
@@ -662,3 +676,7 @@ class IOWriter
   end
   attr_accessor :active
 end
+
+#
+# TEMPORARY
+#
