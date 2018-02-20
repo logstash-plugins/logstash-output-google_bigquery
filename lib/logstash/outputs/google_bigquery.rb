@@ -356,6 +356,14 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         filename = delete_item["filename"]
         job_status = get_job_status(job_id)
 
+        #
+        # Change: Add a check if the job encountered and error because
+        # if the job had an error it doesn't have a state and the code after
+        # this check will cause a FATAL exception.
+        #
+        # This feels like it shouldn't terminate logstash
+        #
+
         if job_status["error"]
           @logger.error("BQ: job error. NOT deleting local file.",
                         :job_id => job_id,
@@ -435,6 +443,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
         if File.size(filename) > 0
           job_id = upload_object(filename)
+
+          #
+          # Change: Changed upload_object so it returns false on a failure rather
+          # than retrying forever. On a false job_id skip that file with a warning
+          #
+
           if job_id
             @delete_queue << { "filename" => filename, "job_id" => job_id }
             File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
@@ -457,14 +471,15 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Returns undated path used to construct base path and final full path.
   # This path only includes directory, prefix, and hostname info.
   def get_undated_path
-    return @temp_directory + File::SEPARATOR + @temp_file_prefix
+    return @temp_directory + File::SEPARATOR + @temp_file_prefix + "_" +
+      Socket.gethostname()
   end
 
   ##
   # Returns base path to log file that is invariant regardless of any
   # user options.
   def get_base_path
-    return get_undated_path() + "_" + Socket.gethostname() + "_" + Time.now.strftime(@date_pattern)
+    return get_undated_path() + "_" + Time.now.strftime(@date_pattern)
   end
 
   ##
@@ -477,7 +492,16 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   ##
   # Returns date from a temporary log file name.
   def get_date_pattern(filename)
-    re = /^#{get_undated_path()}_(?<socket>.*?)_(?<date>.*?)\.part(\d+)\.log$/
+
+    #
+    # Change: Throw an error if the filename doesn't match what is expected
+    # This can happen if there are files from a previous logstash still in that folder
+    # with a different Socket hostname
+    #
+    # Makes diagnosing why the pipeline is failing a bit easier
+    #
+
+    re = /^#{get_undated_path()}_(?<date>.*)\.part(\d+)\.log$/
     match = re.match(filename)
     if ! match
       @logger.error("Couldn't extract date from filename: ", :filename => filename, :re => re.source)
@@ -646,6 +670,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                     :job_id => job_id)
       return job_id
     rescue => e
+      #
+      # Change: Don't keep retrying on a failure as it just freezes the pipeline
+      # and add the filename to the error so its a bit easier to diagnose
+      #
+      # Return false as a job_id instead
+      #
+
       @logger.error("BQ: failed to upload file.", :filename => filename, :exception => e)
       return false
     end
@@ -676,7 +707,3 @@ class IOWriter
   end
   attr_accessor :active
 end
-
-#
-# TEMPORARY
-#
