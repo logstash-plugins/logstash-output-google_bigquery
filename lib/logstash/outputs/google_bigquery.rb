@@ -369,7 +369,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                         :job_id => job_id,
                         :filename => filename,
                         :job_status => job_status)
-          break
+          next
         end
 
         case job_status["status"]["state"]
