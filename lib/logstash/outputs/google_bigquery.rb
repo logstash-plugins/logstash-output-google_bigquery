@@ -129,8 +129,18 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # }
   config :json_schema, :validate => :hash, :required => false, :default => nil
 
-  # Indicates if BigQuery should allow extra values that are not represented in the table schema.
-  # If true, the extra values are ignored. If false, records with extra columns are treated as bad records, and if there are too many bad records, an invalid error is returned in the job result. The default value is false.
+  # Indicates if BigQuery should ignore values that are not represented in the table schema.
+  # If true, the extra values are discarded.
+  # If false, BigQuery will reject the records with extra fields and the job will fail.
+  # The default value is false.
+  #
+  # NOTE: You may want to add a Logstash filter like the following to remove common fields it adds:
+  # [source,ruby]
+  # ----------------------------------
+  # mutate {
+  #     remove_field => ["@version","@timestamp","path","host","type", "message"]
+  # }
+  # ----------------------------------
   config :ignore_unknown_values, :validate => :boolean, :default => false
 
   # Path to private key file for Google Service Account.
@@ -216,6 +226,9 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   public
   def receive(event)
     @logger.debug("BQ: receive method called", :event => event)
+
+    # TODO validate the schema if @ignore_unknown_values is off and alert the user now.
+    # consider creating a bad-data table to store invalid records
 
     # Message must be written as json
     message = LogStash::Json.dump(event.to_hash)
@@ -360,7 +373,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         when "DONE"
           if job_status["status"].has_key?("errorResult")
             @logger.error("BQ: job failed, please enable debug and check full "\
-                          "response (probably the issue is an incompatible "\
+                          "response (the issue is probably an incompatible "\
                           "schema). NOT deleting local file.",
                           :job_id => job_id,
                           :filename => filename,
@@ -411,9 +424,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
               @logger.debug("BQ: reenqueue as log file is being currently appended to.",
                             :filename => filename)
               @upload_queue << filename
+
               # If we got here, it means that older files were uploaded, so let's
-              # wait another minute before checking on this file again.
-              sleep @uploader_interval_secs
+              # wait before checking on this file again.
+              #
+              # Use the min so we don't wait too long if the logs start rotating too quickly
+              # due to an increased number of events.
+              sleep [60, @uploader_interval_secs].min
               next
             else
               @logger.debug("BQ: flush and close file to be uploaded.",
@@ -435,8 +452,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                         :filename => filename)
           File.delete(filename)
         end
-
-        sleep @uploader_interval_secs
       end
     end
   end
