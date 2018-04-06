@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name            = 'logstash-output-google_bigquery'
-  s.version         = '3.2.3'
+  s.version         = '4.0.0'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "Writes events to Google BigQuery"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
@@ -19,11 +19,19 @@ Gem::Specification.new do |s|
   s.metadata = { "logstash_plugin" => "true", "logstash_group" => "output" }
 
   # Gem dependencies
-  s.add_runtime_dependency 'google-api-client', '~> 0.8.7' # version 0.9.x works only with ruby 2.x
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'mime-types', '~> 2' # last version compatible with ruby 2.x
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
 
   s.add_development_dependency 'logstash-devutils'
+
+
+  # JARs
+  s.requirements << "jar 'com.google.cloud:google-cloud-bigquery', '1.24.1'"
+
+  s.add_development_dependency 'jar-dependencies', '~> 0.3.4'
+  s.add_development_dependency 'ruby-maven', '~> 3.3.11'
+
+  s.platform = 'java'
 end
 
