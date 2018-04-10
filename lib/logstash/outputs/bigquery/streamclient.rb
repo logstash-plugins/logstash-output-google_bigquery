@@ -28,10 +28,10 @@ module LogStash
         # Creates a table with the given name in the given dataset
         def create_table(dataset, table, schema)
           api_debug('Creating table', dataset, table)
-          table_id = TableId.of dataset, table
+          table_id = com.google.cloud.bigquery.TableId.of dataset, table
 
-          table_defn = StandardTableDefinition.of schema
-          table_info = TableInfo.newBuilder(table_id, table_defn).build()
+          table_defn = com.google.cloud.bigquery.StandardTableDefinition.of schema
+          table_info = com.google.cloud.bigquery.TableInfo.newBuilder(table_id, table_defn).build()
 
           @bigquery.create table_info
         end
@@ -41,7 +41,7 @@ module LogStash
 
           request = build_append_request dataset, table, rows, ignore_unknown
 
-          response = @bigQuery.insertAll request
+          response = @bigquery.insertAll request
           return true unless response.hasErrors
 
           response.getInsertErrors().entrySet().each{ |entry|
@@ -61,13 +61,12 @@ module LogStash
         end
 
         def build_append_request(dataset, table, rows, ignore_unknown)
-          request = InsertAllRequest.newBuiler dataset, table
+          request = com.google.cloud.bigquery.InsertAllRequest.newBuilder dataset, table
           request.setIgnoreUnknownValues ignore_unknown
 
           rows.each { |serialized_row|
             # deserialize rows into Java maps
-            deserialized = JrJackson::Json.load(serialized_row, :use_bigdecimal)
-
+            deserialized = LogStash::Json.load serialized_row
             request.addRow deserialized
           }
 
@@ -76,35 +75,34 @@ module LogStash
 
         # raises an exception if the key file is invalid
         def get_key_file_error(json_key_file)
-          return nil if json_key_file == ''
-
-          unless ::File.exist? json_key_file
-            return "json_key_file does not exist: #{json_key_file}"
-          end
+          return nil if json_key_file.nil? || json_key_file == ''
 
           abs = ::File.absolute_path json_key_file
           unless abs == json_key_file
             return "json_key_file must be an absolute path: #{json_key_file}"
           end
 
+          unless ::File.exist? json_key_file
+            return "json_key_file does not exist: #{json_key_file}"
+          end
+
           nil
         end
 
-        def initialize_google_client(json_key_path, project_id)
-          @logger.debug('Initializing Google API client')
+        def initialize_google_client(json_key_file, project_id)
+          @logger.info("Initializing Google API client #{project_id} key: #{json_key_file}")
           err = get_key_file_error json_key_file
           raise err unless err.nil?
 
-          if json_key_path.empty?
-            return BigQueryOptions.getDefaultInstance().getService()
+          if json_key_file.nil? || json_key_file.empty?
+            return com.google.cloud.bigquery.BigQueryOptions.getDefaultInstance().getService()
           end
 
           # TODO: set User-Agent
 
-          key_file = java.io.FileInputStream.new json_key_path
+          key_file = java.io.FileInputStream.new json_key_file
           credentials = com.google.auth.oauth2.ServiceAccountCredentials.fromStream key_file
-
-          return BigQueryOptions.newBuilder()
+          return com.google.cloud.bigquery.BigQueryOptions.newBuilder()
                      .setCredentials(credentials)
                      .setProjectId(project_id)
                      .build()

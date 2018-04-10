@@ -124,7 +124,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # If logstash is running within Google Compute Engine, the plugin will use
   # GCE's Application Default Credentials. Outside of GCE, you will need to
   # specify a Service Account JSON key file.
-  config :json_key_file, validate: :path, required: false
+  config :json_key_file, validate: :string, required: false
 
   # The number of messages to upload at a single time. (< 1000, default: 128)
   config :batch_size, validate: :number, required: true, default: 128
@@ -157,13 +157,18 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   public
 
   def register
+    begin
     @logger.debug('BQ: register plugin')
 
     @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
 
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
-    @batcher = LogStash::Outputs::BigQuery::Batcher @batch_size, @batch_size_bytes
+    @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
+
     init_batcher_flush_thread
+    rescue StandardError => e
+      puts e
+    end
   end
 
   # Method called for each log event. It writes the event to the current output
@@ -180,7 +185,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @batcher.enqueue(encoded_message) { |batch| publish(batch) }
   end
 
-  def get_table_name(*time)
+  def get_table_name(time=nil)
     time ||= Time.now
 
     str_time = time.strftime(@date_pattern)
@@ -200,7 +205,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     out = {}
 
     event.each do |key, value|
-      new_key = key.delete '@'
+      new_key = key.to_s.delete '@'
       out[new_key] = replace_at_keys value
     end
 
@@ -223,8 +228,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       end
 
     rescue StandardError => e
-      @logger.error 'Error uploading data.'
-      @logger.error e
+      @logger.error 'Error uploading data.', :exception => e
 
       write_to_errors_file messages, table
     end
@@ -236,23 +240,27 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       @bq_client.create_table(@dataset, table, @schema)
 
     rescue StandardError => e
-      @logger.error 'Error creating table.'
-      @logger.error e
+      @logger.error 'Error creating table.', :exception => e
+      puts "Error: #{e.class}, message: #{e.message}"
     end
   end
 
-  def write_to_errors_file messages, table
-    FileUtils.mkdir_p @temp_directory
+  def write_to_errors_file(messages, table)
+    begin
+      FileUtils.mkdir_p @error_directory
 
-    t = Time.new
-    error_file_name = "#{table}-#{t.to_i}.log"
-    error_file_path = ::File.join(@temp_directory, error_file_name)
+      t = Time.new
+      error_file_name = "#{table}-#{t.to_i}.log"
+      error_file_path = ::File.join(@error_directory, error_file_name)
+      @logger.info "Problem data is being stored in: #{error_file_path}"
 
-    open(error_file_path, 'w') do |f|
-      messages.each do |message|
-        f.puts message
-        f.puts '\n'
+      open(error_file_path, 'w') do |f|
+        messages.each do |message|
+          f.puts message
+        end
       end
+    rescue StandardError => e
+      @logger.error 'Error creating error file.', :exception => e, :messages => messages, :table => table
     end
   end
 

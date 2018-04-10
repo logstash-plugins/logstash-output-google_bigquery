@@ -1,5 +1,6 @@
 require 'java'
 require 'logstash-output-google_bigquery_jars.rb'
+require 'logstash/json'
 
 module LogStash
   module Outputs
@@ -8,16 +9,19 @@ module LogStash
         include_package 'com.google.cloud.bigquery'
 
         # Converts a CSV schema or JSON schema into a BigQuery Java Schema.
-        # A CSV schema will override a JSON one.
         def self.parse_csv_or_json(csv_schema, json_schema)
+          if csv_schema.nil? && json_schema.nil?
+            raise 'You must provide either json_schema or csv_schema.'
+          end
+
+          if !csv_schema.nil? && !json_schema.nil?
+            raise 'You must provide either json_schema or csv_schema, not both.'
+          end
+
           schema = json_schema
 
           unless csv_schema.nil?
             schema = parse_csv_schema csv_schema
-          end
-
-          if schema.nil?
-            raise 'Configuration must provide either json_schema or csv_schema.'
           end
 
           self.hash_to_java_schema schema
@@ -47,8 +51,8 @@ module LogStash
 
         # Converts the Ruby hash style schema into a BigQuery Java schema
         def self.hash_to_java_schema(schema_hash)
-          field_list = self.parse_field_list schema_hash[:fields]
-          Schema.of field_list
+          field_list = self.parse_field_list schema_hash['fields']
+          com.google.cloud.bigquery.Schema.of field_list
         end
 
         # Converts a list of fields into a BigQuery Java FieldList
@@ -61,22 +65,22 @@ module LogStash
         # Converts a single field definition into a BigQuery Java Field object.
         # This includes any nested fields as well.
         def self.parse_field(field)
-          builder = Field.Builder.new
-          builder = builder.setName(field[:name])
+          type = LegacySQLTypeName.valueOfStrict(field['type'])
+          name = field['name']
 
-          if field.has_key? :description
-            builder = builder.setDescription(field[:description])
+          builder = Field.newBuilder(name, type)
+          if field.has_key? 'fields'
+            sub_fields = self.parse_field_list field['fields']
+            builder = Field.newBuilder(name, type, sub_fields)
           end
 
-          if field.has_key? :mode
-            mode = Field.Mode.valueOf field[:mode]
+          if field.has_key? 'description'
+            builder = builder.setDescription(field['description'])
+          end
+
+          if field.has_key? 'mode'
+            mode = Field.Mode.valueOf field['mode']
             builder = builder.setMode(mode)
-          end
-
-          type = LegacySQLTypeName.valueOfStrict field[:type]
-          sub_fields = nil
-          if field.has_key? :fields
-            sub_fields = self.parse_field_list field[:fields]
           end
 
           builder = builder.setType type, sub_fields

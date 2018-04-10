@@ -1,4 +1,4 @@
-require 'logstash/outputs/pubsub/batcher'
+require 'logstash/outputs/bigquery/batcher'
 require 'thread'
 
 describe LogStash::Outputs::BigQuery::Batcher do
