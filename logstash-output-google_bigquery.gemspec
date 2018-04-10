@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
 
   # JARs
   s.requirements << "jar 'com.google.cloud:google-cloud-bigquery', '1.24.1'"
+  s.requirements << "jar 'org.apache.httpcomponents:httpclient', '4.5.2'"
 
   s.add_development_dependency 'jar-dependencies', '~> 0.3.4'
   s.add_development_dependency 'ruby-maven', '~> 3.3.11'
