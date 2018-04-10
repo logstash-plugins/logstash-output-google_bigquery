@@ -29,7 +29,7 @@ Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/log
 - Install dependencies
 ```sh
 bundle install
-rake install_jars
+bundle exec rake install_jars
 ```
 
 #### Test
@@ -38,7 +38,7 @@ rake install_jars
 
 ```sh
 bundle install
-rake install_jars
+bundle exec rake install_jars
 ```
 
 - Run tests
