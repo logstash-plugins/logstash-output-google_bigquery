@@ -31,7 +31,7 @@ require 'fileutils'
 # === Usage
 # This is an example of logstash config:
 #
-# [source,json]
+# [source,ruby]
 # --------------------------
 # output {
 #    google_bigquery {
@@ -72,35 +72,50 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Google Cloud Project ID (number, not Project Name!).
   config :project_id, validate: :string, required: true
 
-  # BigQuery dataset to which these events will be added to.
+  # The BigQuery dataset the tables for the events will be added to.
   config :dataset, validate: :string, required: true
 
   # BigQuery table ID prefix to be used when creating new tables for log data.
-  # Table name will be <table_prefix><table_separator><date>
+  # Table name will be `<table_prefix><table_separator><date>`
   config :table_prefix, validate: :string, default: 'logstash'
 
   # BigQuery table separator to be added between the table_prefix and the
   # date suffix.
   config :table_separator, validate: :string, default: '_'
 
-  # Schema for log data. It must follow this format:
-  # <field1-name>:<field1-type>,<field2-name>:<field2-type>,...
-  # Example: path:STRING,status:INTEGER,score:FLOAT
+  # Schema for log data. It must follow the format `name1:type1(,name2:type2)*`.
+  # For example, `path:STRING,status:INTEGER,score:FLOAT`.
   config :csv_schema, validate: :string, required: false, default: nil
 
-  # Schema for log data, as a hash. Example:
+  # Schema for log data as a hash.
+  # These can include nested records, descriptions, and modes.
+  #
+  # Example:
+  # # [source,ruby]
+  # --------------------------
   # json_schema => {
+  #   fields => [{
+  #     name => "endpoint"
+  #     type => "STRING"
+  #     description => "Request route"
+  #   }, {
+  #     name => "status"
+  #     type => "INTEGER"
+  #     mode => "NULLABLE"
+  #   }, {
+  #     name => "params"
+  #     type => "RECORD"
+  #     mode => "REPEATED"
   #     fields => [{
-  #         name => "timestamp"
-  #         type => "TIMESTAMP"
-  #     }, {
-  #         name => "host"
-  #         type => "STRING"
-  #     }, {
-  #         name => "message"
-  #         type => "STRING"
+  #       name => "key"
+  #       type => "STRING"
+  #      }, {
+  #       name => "value"
+  #       type => "STRING"
   #     }]
+  #   }]
   # }
+  # --------------------------
   config :json_schema, validate: :hash, required: false, default: nil
 
   # Indicates if BigQuery should ignore values that are not represented in the table schema.
@@ -157,18 +172,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   public
 
   def register
-    begin
-    @logger.debug('BQ: register plugin')
+    @logger.debug('Registering plugin')
 
     @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
-
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
 
     init_batcher_flush_thread
-    rescue StandardError => e
-      puts e
-    end
   end
 
   # Method called for each log event. It writes the event to the current output
@@ -214,19 +224,16 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
   # publish sends messages to a BigQuery table immediately
   def publish(messages)
-    return if messages.nil? || messages.empty?
-
-    table = get_table_name
-    @logger.info("Publishing #{messages.length} messages to #{table}")
-
-    create_table_if_not_exists table
-
     begin
-      successful = @bq_client.append @dataset, table, messages, @ignore_unknown_values
-      if ! successful
-        write_to_errors_file messages, table
-      end
+      return if messages.nil? || messages.empty?
 
+      table = get_table_name
+      @logger.info("Publishing #{messages.length} messages to #{table}")
+
+      create_table_if_not_exists table
+
+      successful = @bq_client.append @dataset, table, messages, @ignore_unknown_values
+      write_to_errors_file messages, table unless successful
     rescue StandardError => e
       @logger.error 'Error uploading data.', :exception => e
 
@@ -241,7 +248,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
     rescue StandardError => e
       @logger.error 'Error creating table.', :exception => e
-      puts "Error: #{e.class}, message: #{e.message}"
     end
   end
 
@@ -254,10 +260,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       error_file_path = ::File.join(@error_directory, error_file_name)
       @logger.info "Problem data is being stored in: #{error_file_path}"
 
-      open(error_file_path, 'w') do |f|
-        messages.each do |message|
-          f.puts message
-        end
+      File.open(error_file_path, 'w') do |f|
+        messages.each { |message| f.puts message }
       end
     rescue StandardError => e
       @logger.error 'Error creating error file.', :exception => e, :messages => messages, :table => table

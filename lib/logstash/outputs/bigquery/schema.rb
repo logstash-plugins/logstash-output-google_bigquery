@@ -10,19 +10,13 @@ module LogStash
 
         # Converts a CSV schema or JSON schema into a BigQuery Java Schema.
         def self.parse_csv_or_json(csv_schema, json_schema)
-          if csv_schema.nil? && json_schema.nil?
-            raise 'You must provide either json_schema or csv_schema.'
-          end
-
-          if !csv_schema.nil? && !json_schema.nil?
-            raise 'You must provide either json_schema or csv_schema, not both.'
-          end
-
           schema = json_schema
 
           unless csv_schema.nil?
             schema = parse_csv_schema csv_schema
           end
+
+          raise 'You must provide either json_schema or csv_schema.' if schema.nil?
 
           self.hash_to_java_schema schema
         end
@@ -68,10 +62,11 @@ module LogStash
           type = LegacySQLTypeName.valueOfStrict(field['type'])
           name = field['name']
 
-          builder = Field.newBuilder(name, type)
           if field.has_key? 'fields'
             sub_fields = self.parse_field_list field['fields']
             builder = Field.newBuilder(name, type, sub_fields)
+          else
+            builder = Field.newBuilder(name, type)
           end
 
           if field.has_key? 'description'
@@ -79,11 +74,9 @@ module LogStash
           end
 
           if field.has_key? 'mode'
-            mode = Field.Mode.valueOf field['mode']
+            mode = Field::Mode.valueOf field['mode']
             builder = builder.setMode(mode)
           end
-
-          builder = builder.setType type, sub_fields
 
           builder.build
         end

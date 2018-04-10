@@ -8,14 +8,15 @@ describe LogStash::Outputs::GoogleBigQuery do
   let(:config) { { 'project_id' => 'project', 'dataset' => 'dataset', 'csv_schema' => 'path:STRING,status:INTEGER,score:FLOAT' } }
   let(:sample_event) { LogStash::Event.new }
   let(:bq_client) { double('streaming-client') }
-  let(:errors_file) { double("errors file") }
+  let(:errors_file) { double('errors file') }
 
   subject { LogStash::Outputs::GoogleBigQuery.new(config) }
 
   before(:each) do
     allow(LogStash::Outputs::BigQuery::StreamingClient).to receive(:new).and_return(bq_client)
-    allow(subject).to receive(:init_batcher_flush_thread).and_return(nil)
     expect(LogStash::Outputs::BigQuery::StreamingClient).to receive(:new)
+
+    allow(subject).to receive(:init_batcher_flush_thread).and_return(nil)
     expect(subject).to receive(:init_batcher_flush_thread)
 
     subject.register
@@ -134,8 +135,7 @@ describe LogStash::Outputs::GoogleBigQuery do
   end
 
 
-  # converts tokens into strings recursively
-  # for a map.
+  # converts tokens into strings recursively for a map.
   def keys_to_strs(event)
     return event unless event.is_a? Hash
 
