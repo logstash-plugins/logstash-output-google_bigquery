@@ -32,7 +32,7 @@ describe LogStash::Outputs::BigQuery::Schema do
 
   describe '#parse_csv_schema' do
     it 'splits a CSV into name->type structures' do
-      expected = {'fields' => [keys_to_strs({'name':'foo', 'type':'STRING'}), keys_to_strs({'name':'bar', 'type':'FLOAT'})]}
+      expected = {fields: [keys_to_strs({name:'foo', type:'STRING'}), keys_to_strs({name:'bar', type:'FLOAT'})]}
       result = LogStash::Outputs::BigQuery::Schema.parse_csv_schema "foo:STRING,bar:FLOAT"
 
       expect(result).to eq(keys_to_strs(expected))
