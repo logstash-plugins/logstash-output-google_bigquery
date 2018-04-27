@@ -1,3 +1,28 @@
+## 4.0.0
+
+**Breaking**: the update to 4.0.0 requires that you use an IAM JSON credentials file
+rather than the deprecated P12 files.
+Applications using Application Default Credentials (ADC) _will_ continue to work.
+
+This plugin now uses the BigQuery Streaming API which incurs an expense on upload.
+
+ - The advantages of the streaming API are:
+    - It allows real-time incoming data analysis and queries.
+    - It allows Logstash instances to be started/stopped without worrying about failed batch jobs.
+    - The client library has better support and performance.
+ - New configuration options:
+    - `batch_size` - The number of messages to upload at once.
+    - `json_key_file` - The JSON IAM service account credentials to use with the plugin.
+    - `batch_size_bytes` - The maximum number of bytes to upload as part of a batch (approximate).
+ - Removed configurations:
+    - `uploader_interval_secs` - No longer used
+    - `deleter_interval_secs` - No longer used
+    - `temp_file_prefix` - No longer used
+    - `temp_directory` - No longer used
+    - `key_path` - Use `json_key_file` or Application Default Credentials (ADC) instead.
+    - `key_password` - Use `json_key_file` or Application Default Credentials (ADC) instead.
+    - `service_account` - Use `json_key_file` or Application Default Credentials (ADC) instead.
+
 ## 3.2.4
   - Docs: Set the default_codec doc attribute.
 

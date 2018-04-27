@@ -10,13 +10,18 @@ module LogStash
 
         # Converts a CSV schema or JSON schema into a BigQuery Java Schema.
         def self.parse_csv_or_json(csv_schema, json_schema)
-          schema = json_schema
+          csv_blank  = csv_schema.nil?  || csv_schema.empty?
+          json_blank = json_schema.nil? || json_schema.empty?
 
-          unless csv_schema.nil?
-            schema = parse_csv_schema csv_schema
+          unless csv_blank ^ json_blank
+            raise ArgumentError.new("You must provide either json_schema OR csv_schema. csv: #{csv_schema}, json: #{json_schema}")
           end
 
-          raise 'You must provide either json_schema or csv_schema.' if schema.nil?
+          if csv_blank
+            schema = json_schema
+          else
+            schema = parse_csv_schema csv_schema
+          end
 
           self.hash_to_java_schema schema
         end
@@ -28,17 +33,19 @@ module LogStash
           fields = []
 
           CSV.parse(csv_schema.gsub('\"', '""')).flatten.each do |field|
+            raise ArgumentError.new('csv_schema must follow the format <field-name>:<field-type>') if field.nil?
+
             temp = field.strip.split(':')
 
             if temp.length != 2
-              raise 'csv_schema must follow the format <field-name>:<field-type>'
+              raise ArgumentError.new('csv_schema must follow the format <field-name>:<field-type>')
             end
 
             fields << { 'name' => temp[0], 'type' => temp[1] }
           end
 
           # Check that we have at least one field in the schema
-          raise 'csv_schema must contain at least one field' if fields.empty?
+          raise ArgumentError.new('csv_schema must contain at least one field') if fields.empty?
 
           { 'fields' => fields }
         end

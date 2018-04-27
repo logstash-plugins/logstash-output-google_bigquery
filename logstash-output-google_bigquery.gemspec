@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.authors         = ["Elastic"]
   s.email           = 'info@elastic.co'
   s.homepage        = "http://www.elastic.co/guide/en/logstash/current/index.html"
-  s.require_paths = ["lib"]
+  s.require_paths   = ["lib", "vendor/jar-dependencies"]
 
   # Files
   s.files = Dir["lib/**/*","spec/**/*","*.gemspec","*.md","CONTRIBUTORS","Gemfile","LICENSE","NOTICE.TXT", "vendor/jar-dependencies/**/*.jar", "vendor/jar-dependencies/**/*.rb", "VERSION", "docs/**/*"]
@@ -24,14 +24,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
 
   s.add_development_dependency 'logstash-devutils'
-
-
-  # JARs
-  s.requirements << "jar 'com.google.cloud:google-cloud-bigquery', '1.24.1'"
-  s.requirements << "jar 'org.apache.httpcomponents:httpclient', '4.5.2'"
-
   s.add_development_dependency 'jar-dependencies', '~> 0.3.4'
-  s.add_development_dependency 'ruby-maven', '~> 3.3.11'
 
   s.platform = 'java'
 end

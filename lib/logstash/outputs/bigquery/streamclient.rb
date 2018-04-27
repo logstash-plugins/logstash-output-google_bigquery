@@ -22,7 +22,7 @@ module LogStash
           api_debug('Checking if table exists', dataset, table)
           tbl = @bigquery.getTable dataset, table
 
-          ! tbl.nil?
+          !tbl.nil?
         end
 
         # Creates a table with the given name in the given dataset

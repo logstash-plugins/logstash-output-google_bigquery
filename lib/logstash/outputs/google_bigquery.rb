@@ -157,7 +157,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Or use https://cloud.google.com/storage/docs/gcs-fuse[GCS FUSE] to
   # transparently upload to a GCS bucket.
   #
-  # Files names follow the pattern [table name]-[UNIX timestamp].log
+  # Files names follow the pattern `[table name]-[UNIX timestamp].log`
   config :error_directory, validate: :string, required: true, default: '/tmp/bigquery_errors'
 
   # The following configuration options still exist to alert users that are using them
@@ -167,7 +167,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config :key_password, validate: :string, obsolete: 'Use json_key_file or ADC instead.'
   config :service_account, validate: :string, obsolete: 'Use json_key_file or ADC instead.'
   config :temp_file_prefix, validate: :string, obsolete: 'No longer used.'
-  config :temp_directory, validate: :string, obsolete: 'nNo longer used.'
+  config :temp_directory, validate: :string, obsolete: 'No longer used.'
 
   public
 
@@ -233,11 +233,11 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       create_table_if_not_exists table
 
       successful = @bq_client.append @dataset, table, messages, @ignore_unknown_values
-      write_to_errors_file messages, table unless successful
+      write_to_errors_file(messages, table) unless successful
     rescue StandardError => e
       @logger.error 'Error uploading data.', :exception => e
 
-      write_to_errors_file messages, table
+      write_to_errors_file(messages, table)
     end
   end
 
