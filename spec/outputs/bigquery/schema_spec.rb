@@ -5,7 +5,7 @@ require 'java'
 
 describe LogStash::Outputs::BigQuery::Schema do
 
-  let(:simple_field) {keys_to_strs({'name':'foo', 'type':'STRING'})}
+  let(:simple_field) {keys_to_strs({name: 'foo', type: 'STRING'})}
   let(:complex_field) {keys_to_strs({name: 'params', type: 'RECORD', mode: 'REPEATED', description: 'desc', fields: [simple_field]})}
   let(:example_field_list) {[simple_field, complex_field]}
   let(:example_schema) {keys_to_strs({fields:example_field_list})}

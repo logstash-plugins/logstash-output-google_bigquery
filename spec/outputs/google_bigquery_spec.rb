@@ -35,8 +35,8 @@ describe LogStash::Outputs::GoogleBigQuery do
 
   describe '#replace_at_keys' do
     it 'removes @ in keys' do
-      nested = {'@foo': 'bar'}
-      expected = {'foo': 'bar'}
+      nested = {'@foo' => 'bar'}
+      expected = {foo: 'bar'}
 
       out = subject.replace_at_keys nested
 
@@ -44,7 +44,7 @@ describe LogStash::Outputs::GoogleBigQuery do
     end
 
     it 'does not remove @ in values' do
-      nested = {'foo': '@bar'}
+      nested = {foo: '@bar'}
 
       out = subject.replace_at_keys nested
 
@@ -53,8 +53,8 @@ describe LogStash::Outputs::GoogleBigQuery do
     end
 
     it 'removes @ in nested keys' do
-      nested = {'foo': {'@bar': 'bazz'}}
-      expected = {'foo': {'bar': 'bazz'}}
+      nested = {foo: {'@bar' => 'bazz'}}
+      expected = {foo: {bar: 'bazz'}}
 
       out = subject.replace_at_keys nested
 
