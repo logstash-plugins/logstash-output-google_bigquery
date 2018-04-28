@@ -1,4 +1,3 @@
-
 # [source,txt]
 # -----
 # Author: Rodrigo De Castro <rdc@google.com>
@@ -369,6 +368,23 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
         job_id = delete_item["job_id"]
         filename = delete_item["filename"]
         job_status = get_job_status(job_id)
+
+        #
+        # Change: Add a check if the job encountered and error because
+        # if the job had an error it doesn't have a state and the code after
+        # this check will cause a FATAL exception.
+        #
+        # This feels like it shouldn't terminate logstash
+        #
+
+        if job_status["error"]
+          @logger.error("BQ: job error. NOT deleting local file.",
+                        :job_id => job_id,
+                        :filename => filename,
+                        :job_status => job_status)
+          next
+        end
+
         case job_status["status"]["state"]
         when "DONE"
           if job_status["status"].has_key?("errorResult")
@@ -444,8 +460,18 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
         if File.size(filename) > 0
           job_id = upload_object(filename)
-          @delete_queue << { "filename" => filename, "job_id" => job_id }
-          File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
+
+          #
+          # Change: Changed upload_object so it returns false on a failure rather
+          # than retrying forever. On a false job_id skip that file with a warning
+          #
+
+          if job_id
+            @delete_queue << { "filename" => filename, "job_id" => job_id }
+            File.open(filename + ".bqjob", 'w') { |file| file.write(job_id) }
+          else
+            @logger.warn("BQ: skipping bad file.")
+          end
         else
           @logger.debug("BQ: skipping empty file.")
           @logger.debug("BQ: delete local temporary file ",
@@ -481,7 +507,21 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   ##
   # Returns date from a temporary log file name.
   def get_date_pattern(filename)
-    match = /^#{get_undated_path()}_(?<date>.*)\.part(\d+)\.log$/.match(filename)
+
+    #
+    # Change: Throw an error if the filename doesn't match what is expected
+    # This can happen if there are files from a previous logstash still in that folder
+    # with a different Socket hostname
+    #
+    # Makes diagnosing why the pipeline is failing a bit easier
+    #
+
+    re = /^#{get_undated_path()}_(?<date>.*)\.part(\d+)\.log$/
+    match = re.match(filename)
+    if ! match
+      @logger.error("Couldn't extract date from filename: ", :filename => filename, :re => re.source)
+      raise "Couldn't extract date from filename"
+    end
     return match[:date]
   end
 
@@ -645,10 +685,15 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
                     :job_id => job_id)
       return job_id
     rescue => e
-      @logger.error("BQ: failed to upload file. retrying.", :exception => e)
-      # TODO(rdc): limit retries?
-      sleep 1
-      retry
+      #
+      # Change: Don't keep retrying on a failure as it just freezes the pipeline
+      # and add the filename to the error so its a bit easier to diagnose
+      #
+      # Return false as a job_id instead
+      #
+
+      @logger.error("BQ: failed to upload file.", :filename => filename, :exception => e)
+      return false
     end
   end
 end
