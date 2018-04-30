@@ -2,3 +2,7 @@
 Gemfile.lock
 .bundle
 vendor
+.*
+*.iml
+*.log
+.gradle
