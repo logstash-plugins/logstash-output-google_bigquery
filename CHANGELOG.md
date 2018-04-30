@@ -14,14 +14,17 @@ This plugin now uses the BigQuery Streaming API which incurs an expense on uploa
     - `batch_size` - The number of messages to upload at once.
     - `json_key_file` - The JSON IAM service account credentials to use with the plugin.
     - `batch_size_bytes` - The maximum number of bytes to upload as part of a batch (approximate).
- - Removed configurations:
+ - Deprecated configurations:
     - `uploader_interval_secs` - No longer used
     - `deleter_interval_secs` - No longer used
     - `temp_file_prefix` - No longer used
     - `temp_directory` - No longer used
-    - `key_path` - Use `json_key_file` or Application Default Credentials (ADC) instead.
     - `key_password` - Use `json_key_file` or Application Default Credentials (ADC) instead.
     - `service_account` - Use `json_key_file` or Application Default Credentials (ADC) instead.
+ - Obsolete configurations:
+    - `key_path` - Use `json_key_file` or Application Default Credentials (ADC) instead.
+      See [the documentation](https://www.elastic.co/guide/en/logstash/current/plugins-outputs-google_bigquery.html#plugins-outputs-google_bigquery-key_path)
+      for help about moving to JSON key files.
 
 ## 3.2.4
   - Docs: Set the default_codec doc attribute.

@@ -31,7 +31,7 @@ a certain amount of data is ingested.
 
 ===== Environment Configuration
 
-You must enable BigQuery on your GCS account and create a dataset to
+You must enable BigQuery on your Google Cloud Storage (GCS) account and create a dataset to
 hold the tables this plugin generates.
 
 You must also grant the service account this plugin uses access to
@@ -72,6 +72,7 @@ https://cloud.google.com/docs/authentication/production[Application Default Cred
 
 ===== Additional Resources
 
+* https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC) Overview]
 * https://cloud.google.com/bigquery/[BigQuery Introduction]
 * https://cloud.google.com/bigquery/docs/schemas[BigQuery Schema Formats and Types]
 * https://cloud.google.com/bigquery/pricing[Pricing Information]
@@ -89,14 +90,21 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-csv_schema>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-dataset>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-date_pattern>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-deleter_interval_secs>> |<<number,number>>|__Deprecated__
 | <<plugins-{type}s-{plugin}-error_directory>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-flush_interval_secs>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-ignore_unknown_values>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-json_key_file>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-json_schema>> |<<hash,hash>>|No
+| <<plugins-{type}s-{plugin}-key_password>> |<<string,string>>|__Deprecated__
+| <<plugins-{type}s-{plugin}-key_path>> |<<string,string>>|*Obsolete*
 | <<plugins-{type}s-{plugin}-project_id>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-service_account>> |<<string,string>>|__Deprecated__
 | <<plugins-{type}s-{plugin}-table_prefix>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-table_separator>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-temp_directory>> |<<string,string>>|__Deprecated__
+| <<plugins-{type}s-{plugin}-temp_file_prefix>> |<<string,string>>|__Deprecated__
+| <<plugins-{type}s-{plugin}-uploader_interval_secs>> |<<number,number>>|__Deprecated__
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
@@ -146,6 +154,14 @@ The BigQuery dataset the tables for the events will be added to.
 
 Time pattern for BigQuery table, defaults to hourly tables.
 Must Time.strftime patterns: www.ruby-doc.org/core-2.0/Time.html#method-i-strftime
+
+[id="plugins-{type}s-{plugin}-deleter_interval_secs"]
+===== `deleter_interval_secs`
+
+  * Value type is <<number,number>>
+
+**Deprecated:** this field is no longer used because temporary files are no longer
+stored on the hard drive.
 
 [id="plugins-{type}s-{plugin}-error_directory"]
 ===== `error_directory`
@@ -237,6 +253,28 @@ json_schema => {
 }
 --------------------------
 
+[id="plugins-{type}s-{plugin}-key_password"]
+===== `key_password`
+
+  * Value type is <<string,string>>
+
+**Deprecated:** this field is no longer needed with `json_key_file` or ADC.
+
+
+[id="plugins-{type}s-{plugin}-key_path"]
+===== `key_path`
+
+  * Value type is <<string,string>>
+
+**Obsolete:** The PKCS12 key file format is no longer supported.
+Please use one of the following mechanisms:
+
+  * https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC)],
+    configured via environment variables on Compute Engine, Kubernetes Engine, App Engine, or
+    Cloud Functions.
+  * A JSON authentication key file. You can generate them in the console for the service account
+    like you did with the `.P12` file or with the following command:
+    `gcloud iam service-accounts keys create key.json --iam-account my-sa-123@my-project-123.iam.gserviceaccount.com`
 
 [id="plugins-{type}s-{plugin}-project_id"]
 ===== `project_id` 
@@ -246,6 +284,14 @@ json_schema => {
   * There is no default value for this setting.
 
 Google Cloud Project ID (number, not Project Name!).
+
+[id="plugins-{type}s-{plugin}-service_account"]
+===== `service_account`
+
+  * Value type is <<string,string>>
+
+**Deprecated:** this field is no longer used because it is contained in the `json_key_file` or
+the Application Default Credentials (ADC) environment variables.
 
 [id="plugins-{type}s-{plugin}-table_prefix"]
 ===== `table_prefix` 
@@ -264,6 +310,37 @@ Table name will be `<table_prefix><table_separator><date>`
 
 BigQuery table separator to be added between the table_prefix and the
 date suffix.
+
+[id="plugins-{type}s-{plugin}-temp_directory"]
+===== `temp_directory`
+
+  * Value type is <<string,string>>
+
+**Deprecated:** this field is no longer used.
+Events are uploaded in real-time without being stored to disk.
+
+ * Events that failed to be uploaded will be stored in <<plugins-{type}s-{plugin}-error_directory>>.
+ * There is a small fee to insert data into BigQuery using the streaming API.
+   https://cloud.google.com/bigquery/pricing[Pricing Information]
+ * This plugin buffers events in-memory, so make sure the flush configurations are appropriate
+  for your use-case and consider using
+  https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues]
+
+[id="plugins-{type}s-{plugin}-temp_file_prefix"]
+===== `temp_file_prefix`
+
+  * Value type is <<string,string>>
+
+**Deprecated:** this field is no longer used.
+Events are uploaded in real-time without being stored to disk.
+
+ * Events that failed to be uploaded will be stored in <<plugins-{type}s-{plugin}-error_directory>>.
+ * There is a small fee to insert data into BigQuery using the streaming API.
+   https://cloud.google.com/bigquery/pricing[Pricing Information]
+ * This plugin buffers events in-memory, so make sure the flush configurations are appropriate
+  for your use-case and consider using
+  https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues]
+
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
