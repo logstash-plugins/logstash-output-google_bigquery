@@ -161,13 +161,13 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config :error_directory, validate: :string, required: true, default: '/tmp/bigquery_errors'
 
   # The following configuration options still exist to alert users that are using them
-  config :uploader_interval_secs, validate: :number, obsolete: 'No longer used.'
-  config :deleter_interval_secs, validate: :number, obsolete: 'No longer used.'
+  config :uploader_interval_secs, validate: :number, deprecated: 'No longer used.'
+  config :deleter_interval_secs, validate: :number, deprecated: 'No longer used.'
   config :key_path, validate: :string, obsolete: 'Use json_key_file or ADC instead.'
-  config :key_password, validate: :string, obsolete: 'Use json_key_file or ADC instead.'
-  config :service_account, validate: :string, obsolete: 'Use json_key_file or ADC instead.'
-  config :temp_file_prefix, validate: :string, obsolete: 'No longer used.'
-  config :temp_directory, validate: :string, obsolete: 'No longer used.'
+  config :key_password, validate: :string, deprecated: 'No longer needed with json_key_file or ADC.'
+  config :service_account, validate: :string, deprecated: 'No longer needed with json_key_file or ADC.'
+  config :temp_file_prefix, validate: :string, deprecated: 'No longer used.'
+  config :temp_directory, validate: :string, deprecated: 'No longer used.'
 
   public
 
