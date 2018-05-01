@@ -114,7 +114,7 @@ output plugins.
 
 [id="plugins-{type}s-{plugin}-batch_size"]
 ===== `batch_size`
-
+new[4.0.0]
   * Value type is <<number,number>>
   * Default value is `128`
 
@@ -122,7 +122,7 @@ The number of messages to upload at a single time. (< 1000, default: 128)
 
 [id="plugins-{type}s-{plugin}-batch_size_bytes"]
 ===== `batch_size_bytes`
-
+new[4.0.0]
   * Value type is <<number,number>>
   * Default value is `1_000_000`
 
@@ -157,15 +157,13 @@ Must Time.strftime patterns: www.ruby-doc.org/core-2.0/Time.html#method-i-strfti
 
 [id="plugins-{type}s-{plugin}-deleter_interval_secs"]
 ===== `deleter_interval_secs`
+deprecated[4.0.0, Events are uploaded in real-time without being stored to disk.]
 
   * Value type is <<number,number>>
 
-**Deprecated:** this field is no longer used because temporary files are no longer
-stored on the hard drive.
-
 [id="plugins-{type}s-{plugin}-error_directory"]
 ===== `error_directory`
-
+new[4.0.0]
   * This is a required setting.
   * Value type is <<string,string>>
   * Default value is `"/tmp/bigquery"`.
@@ -209,7 +207,7 @@ mutate {
 
 [id="plugins-{type}s-{plugin}-json_key_file"]
 ===== `json_key_file`
-
+new[4.0.0, Replaces <<plugins-{type}s-{plugin}-key_password>>, <<plugins-{type}s-{plugin}-key_path>> and <<plugins-{type}s-{plugin}-service_account>>]]
   * Value type is <<string,string>>
   * Default value is `nil`
 
@@ -255,18 +253,17 @@ json_schema => {
 
 [id="plugins-{type}s-{plugin}-key_password"]
 ===== `key_password`
+deprecated[4.0.0, Replaced by `json_key_file` or by using ADC. See <<plugins-{type}s-{plugin}-json_key_file>>]
 
   * Value type is <<string,string>>
-
-**Deprecated:** this field is no longer needed with `json_key_file` or ADC.
 
 
 [id="plugins-{type}s-{plugin}-key_path"]
 ===== `key_path`
-
   * Value type is <<string,string>>
 
 **Obsolete:** The PKCS12 key file format is no longer supported.
+
 Please use one of the following mechanisms:
 
   * https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC)],
@@ -287,6 +284,7 @@ Google Cloud Project ID (number, not Project Name!).
 
 [id="plugins-{type}s-{plugin}-service_account"]
 ===== `service_account`
+deprecated[4.0.0, Replaced by `json_key_file` or by using ADC. See <<plugins-{type}s-{plugin}-json_key_file>>]
 
   * Value type is <<string,string>>
 
@@ -313,45 +311,24 @@ date suffix.
 
 [id="plugins-{type}s-{plugin}-temp_directory"]
 ===== `temp_directory`
-
+deprecated[4.0.0, Events are uploaded in real-time without being stored to disk.]
   * Value type is <<string,string>>
-
-**Deprecated:** this field is no longer used.
-Events are uploaded in real-time without being stored to disk.
-
- * Events that failed to be uploaded will be stored in <<plugins-{type}s-{plugin}-error_directory>>.
- * There is a small fee to insert data into BigQuery using the streaming API.
-   https://cloud.google.com/bigquery/pricing[Pricing Information]
- * This plugin buffers events in-memory, so make sure the flush configurations are appropriate
-  for your use-case and consider using
-  https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues]
 
 [id="plugins-{type}s-{plugin}-temp_file_prefix"]
 ===== `temp_file_prefix`
+deprecated[4.0.0, Events are uploaded in real-time without being stored to disk]
 
   * Value type is <<string,string>>
 
-**Deprecated:** this field is no longer used.
-Events are uploaded in real-time without being stored to disk.
-
- * Events that failed to be uploaded will be stored in <<plugins-{type}s-{plugin}-error_directory>>.
- * There is a small fee to insert data into BigQuery using the streaming API.
-   https://cloud.google.com/bigquery/pricing[Pricing Information]
- * This plugin buffers events in-memory, so make sure the flush configurations are appropriate
-  for your use-case and consider using
-  https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues]
-
 [id="plugins-{type}s-{plugin}-uploader_interval_secs"]
 ===== `uploader_interval_secs`
-
+deprecated[4.0.0, This field is no longer used]
   * Value type is <<number,number>>
   * Default value is `60`
 
 Uploader interval when uploading new files to BigQuery. Adjust time based
 on your time pattern (for example, for hourly files, this interval can be
 around one hour).
-
-**Deprecated:** this field is no longer used.
 
 
 [id="plugins-{type}s-{plugin}-common-options"]
