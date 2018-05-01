@@ -1,3 +1,6 @@
+## 4.0.1
+ - Documentation cleanup
+
 ## 4.0.0
 
 **Breaking**: the update to 4.0.0 requires that you use an IAM JSON credentials file
