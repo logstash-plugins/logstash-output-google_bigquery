@@ -341,6 +341,18 @@ Events are uploaded in real-time without being stored to disk.
   for your use-case and consider using
   https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues]
 
+[id="plugins-{type}s-{plugin}-uploader_interval_secs"]
+===== `uploader_interval_secs`
+
+  * Value type is <<number,number>>
+  * Default value is `60`
+
+Uploader interval when uploading new files to BigQuery. Adjust time based
+on your time pattern (for example, for hourly files, this interval can be
+around one hour).
+
+**Deprecated:** this field is no longer used.
+
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
