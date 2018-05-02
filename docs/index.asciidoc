@@ -75,7 +75,6 @@ https://cloud.google.com/docs/authentication/production[Application Default Cred
 * https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC) Overview]
 * https://cloud.google.com/bigquery/[BigQuery Introduction]
 * https://cloud.google.com/bigquery/docs/schemas[BigQuery Schema Formats and Types]
-* https://cloud.google.com/bigquery/pricing[Pricing Information]
 
 [id="plugins-{type}s-{plugin}-options"]
 ==== Google BigQuery Output Configuration Options
@@ -114,7 +113,9 @@ output plugins.
 
 [id="plugins-{type}s-{plugin}-batch_size"]
 ===== `batch_size`
-new[4.0.0]
+
+added[4.0.0]
+
   * Value type is <<number,number>>
   * Default value is `128`
 
@@ -122,7 +123,9 @@ The number of messages to upload at a single time. (< 1000, default: 128)
 
 [id="plugins-{type}s-{plugin}-batch_size_bytes"]
 ===== `batch_size_bytes`
-new[4.0.0]
+
+added[4.0.0]
+
   * Value type is <<number,number>>
   * Default value is `1_000_000`
 
@@ -157,13 +160,15 @@ Must Time.strftime patterns: www.ruby-doc.org/core-2.0/Time.html#method-i-strfti
 
 [id="plugins-{type}s-{plugin}-deleter_interval_secs"]
 ===== `deleter_interval_secs`
+
 deprecated[4.0.0, Events are uploaded in real-time without being stored to disk.]
 
   * Value type is <<number,number>>
 
 [id="plugins-{type}s-{plugin}-error_directory"]
 ===== `error_directory`
-new[4.0.0]
+added[4.0.0]
+
   * This is a required setting.
   * Value type is <<string,string>>
   * Default value is `"/tmp/bigquery"`.
@@ -207,7 +212,9 @@ mutate {
 
 [id="plugins-{type}s-{plugin}-json_key_file"]
 ===== `json_key_file`
-new[4.0.0, Replaces <<plugins-{type}s-{plugin}-key_password>>, <<plugins-{type}s-{plugin}-key_path>> and <<plugins-{type}s-{plugin}-service_account>>]
+
+added[4.0.0, Replaces <<plugins-{type}s-{plugin}-key_password>>, <<plugins-{type}s-{plugin}-key_path>> and <<plugins-{type}s-{plugin}-service_account>>]
+
   * Value type is <<string,string>>
   * Default value is `nil`
 
@@ -253,6 +260,7 @@ json_schema => {
 
 [id="plugins-{type}s-{plugin}-key_password"]
 ===== `key_password`
+
 deprecated[4.0.0, Replaced by `json_key_file` or by using ADC. See <<plugins-{type}s-{plugin}-json_key_file>>]
 
   * Value type is <<string,string>>
@@ -260,6 +268,7 @@ deprecated[4.0.0, Replaced by `json_key_file` or by using ADC. See <<plugins-{ty
 
 [id="plugins-{type}s-{plugin}-key_path"]
 ===== `key_path`
+
   * Value type is <<string,string>>
 
 **Obsolete:** The PKCS12 key file format is no longer supported.
@@ -284,12 +293,10 @@ Google Cloud Project ID (number, not Project Name!).
 
 [id="plugins-{type}s-{plugin}-service_account"]
 ===== `service_account`
+
 deprecated[4.0.0, Replaced by `json_key_file` or by using ADC. See <<plugins-{type}s-{plugin}-json_key_file>>]
 
   * Value type is <<string,string>>
-
-**Deprecated:** this field is no longer used because it is contained in the `json_key_file` or
-the Application Default Credentials (ADC) environment variables.
 
 [id="plugins-{type}s-{plugin}-table_prefix"]
 ===== `table_prefix` 
@@ -311,18 +318,23 @@ date suffix.
 
 [id="plugins-{type}s-{plugin}-temp_directory"]
 ===== `temp_directory`
+
 deprecated[4.0.0, Events are uploaded in real-time without being stored to disk.]
+
   * Value type is <<string,string>>
 
 [id="plugins-{type}s-{plugin}-temp_file_prefix"]
 ===== `temp_file_prefix`
+
 deprecated[4.0.0, Events are uploaded in real-time without being stored to disk]
 
   * Value type is <<string,string>>
 
 [id="plugins-{type}s-{plugin}-uploader_interval_secs"]
 ===== `uploader_interval_secs`
+
 deprecated[4.0.0, This field is no longer used]
+
   * Value type is <<number,number>>
   * Default value is `60`
 
