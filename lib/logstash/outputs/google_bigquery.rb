@@ -183,8 +183,6 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
 
     init_batcher_flush_thread
-
-    @logger.info('Plugin registered')
   end
 
   # Method called for each log event. It writes the event to the current output

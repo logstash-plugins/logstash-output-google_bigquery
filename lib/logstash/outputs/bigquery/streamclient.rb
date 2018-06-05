@@ -63,7 +63,7 @@ module LogStash
         end
 
         def build_append_request(dataset, table, rows, ignore_unknown, skip_invalid)
-          request = com.google.cloud.bigquery.InsertAllRequest.newBuilder(dataset, table)
+          request = com.google.cloud.bigquery.InsertAllRequest.newBuilder dataset, table
           request.setIgnoreUnknownValues ignore_unknown
           request.setSkipInvalidRows(skip_invalid)
 
