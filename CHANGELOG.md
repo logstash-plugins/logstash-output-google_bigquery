@@ -1,3 +1,8 @@
+## 4.1.0
+ - Added `skip_invalid_rows` configuration which will insert all valid rows of a BigQuery insert
+   and skip any invalid ones.
+    - Fixes [#5](https://github.com/logstash-plugins/logstash-output-google_bigquery/issues/5)
+
 ## 4.0.1
  - Documentation cleanup
 

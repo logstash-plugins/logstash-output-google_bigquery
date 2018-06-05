@@ -74,7 +74,7 @@ describe LogStash::Outputs::GoogleBigQuery do
 
     it 'creates a table if it does not exist' do
       allow(subject).to receive(:create_table_if_not_exists).and_return(nil)
-      allow(bq_client).to receive(:append).and_return(true)
+      allow(bq_client).to receive(:append).and_return([])
       allow(subject).to receive(:write_to_errors_file).and_return(nil)
       expect(subject).to receive(:create_table_if_not_exists)
 
@@ -83,7 +83,7 @@ describe LogStash::Outputs::GoogleBigQuery do
 
     it 'writes rows to a file on failed insert' do
       allow(subject).to receive(:create_table_if_not_exists).and_return(nil)
-      allow(bq_client).to receive(:append).and_return(false)
+      allow(bq_client).to receive(:append).and_return([0])
       allow(subject).to receive(:write_to_errors_file).and_return(nil)
       expect(subject).to receive(:write_to_errors_file)
 
