@@ -160,6 +160,10 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # Files names follow the pattern `[table name]-[UNIX timestamp].log`
   config :error_directory, validate: :string, required: true, default: '/tmp/bigquery_errors'
 
+  # Insert all valid rows of a request, even if invalid rows exist. The default value is false,
+  # which causes the entire request to fail if any invalid rows exist.
+  config :skip_invalid_rows, validate: :boolean, default: false
+
   # The following configuration options still exist to alert users that are using them
   config :uploader_interval_secs, validate: :number, deprecated: 'No longer used.'
   config :deleter_interval_secs, validate: :number, deprecated: 'No longer used.'
@@ -232,8 +236,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
       create_table_if_not_exists table
 
-      successful = @bq_client.append @dataset, table, messages, @ignore_unknown_values
-      write_to_errors_file(messages, table) unless successful
+      failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows)
+      write_to_errors_file(failed_rows, table) unless failed_rows.empty?
     rescue StandardError => e
       @logger.error 'Error uploading data.', :exception => e
 
