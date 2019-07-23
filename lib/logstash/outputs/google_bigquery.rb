@@ -7,6 +7,7 @@ require 'logstash/outputs/bigquery/schema'
 
 require 'time'
 require 'fileutils'
+require 'concurrent'
 
 #
 # === Summary
@@ -181,6 +182,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
+    @stopping = Concurrent::AtomicBoolean.new(false)
 
     init_batcher_flush_thread
   end
@@ -274,11 +276,24 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
   def init_batcher_flush_thread
     @flush_thread = Thread.new do
-      loop do
-        sleep @flush_interval_secs
+      until stopping?
+        Stud.stoppable_sleep(@flush_interval_secs) { stopping? }
 
         @batcher.enqueue(nil) { |batch| publish(batch) }
       end
     end
+  end
+
+  def stopping?
+    @stopping.value
+  end
+
+  def close
+    @stopping.make_true
+    @flush_thread.wakeup
+    @flush_thread.join
+    # Final flush to publish any events published if a pipeline receives a shutdown signal after flush thread
+    # has begun flushing.
+    @batcher.enqueue(nil) { |batch| publish(batch) }
   end
 end
