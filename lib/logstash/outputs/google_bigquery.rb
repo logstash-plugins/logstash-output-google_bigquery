@@ -182,7 +182,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
-    @stopping = Concurrent::AtomicBoolean.new
+    @stopping = Concurrent::AtomicBoolean.new(false)
 
     init_batcher_flush_thread
   end
