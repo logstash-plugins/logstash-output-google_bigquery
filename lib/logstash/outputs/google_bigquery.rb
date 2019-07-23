@@ -277,7 +277,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   def init_batcher_flush_thread
     @flush_thread = Thread.new do
       until stopping?
-        sleep @flush_interval_secs
+        Stud.stoppable_sleep(@flush_interval_secs) { stopping? }
 
         @batcher.enqueue(nil) { |batch| publish(batch) }
       end
