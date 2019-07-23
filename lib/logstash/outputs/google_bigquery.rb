@@ -292,5 +292,8 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @stopping.make_true
     @flush_thread.wakeup
     @flush_thread.join
+    # Final flush to publish any events published if a pipeline receives a shutdown signal after flush thread
+    # has begun flushing.
+    @batcher.enqueue(nil) { |batch| publish(batch) }
   end
 end
