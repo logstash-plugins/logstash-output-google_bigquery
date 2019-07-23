@@ -7,6 +7,7 @@ require 'logstash/outputs/bigquery/schema'
 
 require 'time'
 require 'fileutils'
+require 'concurrent'
 
 #
 # === Summary
@@ -181,6 +182,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
+    @stopping = Concurrent::AtomicBoolean.new
 
     init_batcher_flush_thread
   end
@@ -274,11 +276,21 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
   def init_batcher_flush_thread
     @flush_thread = Thread.new do
-      loop do
+      until stopping?
         sleep @flush_interval_secs
 
         @batcher.enqueue(nil) { |batch| publish(batch) }
       end
     end
+  end
+
+  def stopping?
+    @stopping.value
+  end
+
+  def close
+    @stopping.make_true
+    @flush_thread.wakeup
+    @flush_thread.join
   end
 end
