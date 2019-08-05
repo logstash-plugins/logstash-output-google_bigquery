@@ -1,5 +1,5 @@
 ## 4.1.3
- - Fixed documentation issue where malformed asciidoc caused text to be lost [#tbd](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/tbd)
+ - Fixed documentation issue where malformed asciidoc caused text to be lost [#53](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/53)
 
 ## 4.1.2
  - Fixed issue where Logstash shutdown could cause data loss due to not flushing buffers on close [#52](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/52)
