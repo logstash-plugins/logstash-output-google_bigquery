@@ -35,6 +35,7 @@ module LogStash
         def enqueue(message)
           @lock.write_lock.lock
 
+          orig = nil
           begin
             is_flush_request = message.nil?
 
@@ -49,15 +50,14 @@ module LogStash
             if is_flush_request || length_met || size_met
               orig = @batch
               clear
-
-              yield(orig) if block_given?
-              return orig
             end
 
-            nil
           ensure
             @lock.write_lock.unlock
           end
+
+          yield(orig) if block_given? && !orig.nil?
+          return orig
         end
 
         # removes all elements from the batch

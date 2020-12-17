@@ -68,7 +68,7 @@ require 'concurrent'
 class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   config_name 'google_bigquery'
 
-  concurrency :single
+  concurrency :shared
 
   # Google Cloud Project ID (number, not Project Name!).
   config :project_id, validate: :string, required: true
