@@ -1,3 +1,6 @@
+## 4.1.4
+ - Changed concurrency to :shared and publish outside of synchronized code [#60](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/60)
+
 ## 4.1.3
  - Fixed documentation issue where malformed asciidoc caused text to be lost [#53](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/53)
 
