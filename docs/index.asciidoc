@@ -58,7 +58,6 @@ output {
 --------------------------
 
 <1> Specify either a csv_schema or a json_schema.
-
 <2> If the key is not used, then the plugin tries to find
 https://cloud.google.com/docs/authentication/production[Application Default Credentials]
 
@@ -75,7 +74,7 @@ https://cloud.google.com/docs/authentication/production[Application Default Cred
 
 * https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC) Overview]
 * https://cloud.google.com/bigquery/[BigQuery Introduction]
-* https://cloud.google.com/bigquery/quota[BigQuery Quotas and Limits]
+* https://cloud.google.com/bigquery/quotas[BigQuery Quotas and Limits]
 * https://cloud.google.com/bigquery/docs/schemas[BigQuery Schema Formats and Types]
 
 [id="plugins-{type}s-{plugin}-options"]
