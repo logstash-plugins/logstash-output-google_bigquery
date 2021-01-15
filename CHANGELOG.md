@@ -1,3 +1,6 @@
+## 4.1.5
+ - [DOC] Updated links to use shared attributes [#61](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/61)
+
 ## 4.1.4
  - Changed concurrency to :shared and publish outside of synchronized code [#60](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/60)
 

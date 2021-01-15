@@ -36,7 +36,7 @@ hold the tables this plugin generates.
 
 You must also grant the service account this plugin uses access to the dataset.
 
-You can use https://www.elastic.co/guide/en/logstash/current/event-dependent-configuration.html[Logstash conditionals]
+You can use {logstash-ref}/event-dependent-configuration.html[Logstash conditionals]
 and multiple configuration blocks to upload events with different structures.
 
 ===== Usage
@@ -58,7 +58,6 @@ output {
 --------------------------
 
 <1> Specify either a csv_schema or a json_schema.
-
 <2> If the key is not used, then the plugin tries to find
 https://cloud.google.com/docs/authentication/production[Application Default Credentials]
 
@@ -67,7 +66,7 @@ https://cloud.google.com/docs/authentication/production[Application Default Cred
 * There is a small fee to insert data into BigQuery using the streaming API.
 * This plugin buffers events in-memory, so make sure the flush configurations are appropriate
   for your use-case and consider using
-  https://www.elastic.co/guide/en/logstash/current/persistent-queues.html[Logstash Persistent Queues].
+  {logstash-ref}/persistent-queues.html[Logstash Persistent Queues].
 * Events will be flushed when <<plugins-{type}s-{plugin}-batch_size>>, <<plugins-{type}s-{plugin}-batch_size_bytes>>, or <<plugins-{type}s-{plugin}-flush_interval_secs>> is met, whatever comes first.
   If you notice a delay in your processing or low throughput, try adjusting those settings.
 
@@ -75,7 +74,7 @@ https://cloud.google.com/docs/authentication/production[Application Default Cred
 
 * https://cloud.google.com/docs/authentication/production[Application Default Credentials (ADC) Overview]
 * https://cloud.google.com/bigquery/[BigQuery Introduction]
-* https://cloud.google.com/bigquery/quota[BigQuery Quotas and Limits]
+* https://cloud.google.com/bigquery/quotas[BigQuery Quotas and Limits]
 * https://cloud.google.com/bigquery/docs/schemas[BigQuery Schema Formats and Types]
 
 [id="plugins-{type}s-{plugin}-options"]
