@@ -205,7 +205,11 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
     time ||= Time.now
 
     str_time = time.strftime(@date_pattern)
-    table_id = @table_prefix + @table_separator + str_time
+    if str_time.to_s.empty?
+        table_id = @table_prefix
+    else
+        table_id = @table_prefix + @table_separator + str_time
+    end
 
     # BQ does not accept anything other than alphanumeric and _
     # Ref: https://developers.google.com/bigquery/browser-tool-quickstart?hl=en
