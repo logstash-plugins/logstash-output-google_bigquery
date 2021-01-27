@@ -9,6 +9,8 @@ require 'time'
 require 'fileutils'
 require 'concurrent'
 
+java_import org.apache.logging.log4j.ThreadContext
+
 #
 # === Summary
 #
@@ -275,7 +277,9 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   def init_batcher_flush_thread
+    pipeline_id = ThreadContext.get('pipeline.id')
     @flush_thread = Thread.new do
+      ThreadContext.put('pipeline.id', pipeline_id)
       until stopping?
         Stud.stoppable_sleep(@flush_interval_secs) { stopping? }
 
