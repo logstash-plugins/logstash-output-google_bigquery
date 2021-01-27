@@ -167,6 +167,12 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # which causes the entire request to fail if any invalid rows exist.
   config :skip_invalid_rows, validate: :boolean, default: false
 
+  # Retry appending data if the append request failed. If a partial failue was detected, retry only the filed rows, otherwise retry with the full batch.
+  config :max_tries, validate: :number, default: 1
+
+  # Wait this amount of seconds before attempting a retry.
+  config :retry_delay, validate: :number, default: nil
+
   # The following configuration options still exist to alert users that are using them
   config :uploader_interval_secs, validate: :number, deprecated: 'No longer used.'
   config :deleter_interval_secs, validate: :number, deprecated: 'No longer used.'
@@ -238,9 +244,39 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       table = get_table_name
       @logger.info("Publishing #{messages.length} messages to #{table}")
 
-      create_table_if_not_exists table
+      begin
+        try_count ||= 0
+        try_count += 1
 
-      failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows)
+        if @retry_delay and try_count > 1
+          sleep(@retry_delay)
+        end
+
+        create_table_if_not_exists table
+
+        failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows)
+        raise "failed rows" unless failed_rows.empty?
+      rescue => e
+        if try_count < @max_tries
+          if e.to_s == "failed rows"
+            @logger.warn "#{failed_rows.count} failed rows detected, will retry, remaining tries: #{@max_tries - try_count}."
+            messages = failed_rows
+            retry
+          end
+          @logger.warn "Cought exception, remaining tries: #{@max_tries - try_count}.", :exception => e
+          retry
+        else
+          if e.to_s != 'failed rows'
+            @logger.warn 'Giving up'
+            raise
+          end
+        end
+      ensure
+        if try_count > 1
+          @logger.warn "Publish succeeded at try #{try_count}/#{@max_tries}"
+        end
+      end
+
       write_to_errors_file(failed_rows, table) unless failed_rows.empty?
     rescue StandardError => e
       @logger.error 'Error uploading data.', :exception => e

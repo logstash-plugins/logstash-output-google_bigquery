@@ -72,6 +72,28 @@ describe LogStash::Outputs::GoogleBigQuery do
       expect(subject).not_to receive(:create_table_if_not_exists)
     end
 
+    context 'if retry is configured' do
+      let(:config) { { 'project_id' => 'project', 'dataset' => 'dataset', 'csv_schema' => 'path:STRING,status:INTEGER,score:FLOAT', 'max_tries' => 2, 'retry_delay' => 1 } }
+
+      it 'tries again if insert threw an exception' do
+        allow(subject).to receive(:create_table_if_not_exists).and_return(nil)
+        allow(bq_client).to receive(:append).and_raise('expected insert error')
+        expect(bq_client).to receive(:append).twice
+        expect(subject).to receive(:sleep).once
+
+        subject.publish ['{"foo":"bar"}']
+      end
+
+      it 'tries again on failed insert' do
+        allow(subject).to receive(:create_table_if_not_exists).and_return(nil)
+        allow(bq_client).to receive(:append).and_return([0])
+        expect(bq_client).to receive(:append).twice
+        expect(subject).to receive(:sleep).once
+
+        subject.publish ['{"foo":"bar"}']
+      end
+    end
+
     it 'creates a table if it does not exist' do
       allow(subject).to receive(:create_table_if_not_exists).and_return(nil)
       allow(bq_client).to receive(:append).and_return([])
