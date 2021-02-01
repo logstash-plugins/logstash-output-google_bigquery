@@ -206,7 +206,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   def get_table_name(time=nil)
-    return table_name unless table_name.nil? || table_name.empty?
+    return @table_name unless @table_name.nil? || @table_name.empty?
     time ||= Time.now
 
     str_time = time.strftime(@date_pattern)
