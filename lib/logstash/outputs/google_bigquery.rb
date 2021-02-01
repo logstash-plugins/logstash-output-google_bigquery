@@ -86,7 +86,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
   # BigQuery table name to be used when inserting data into an existing table
   # (Useful when using partitioned table)
-  config :table_name, validate: :string, default: nil
+  config :table_name, validate: :string, required: false, default: nil
 
   # Schema for log data. It must follow the format `name1:type1(,name2:type2)*`.
   # For example, `path:STRING,status:INTEGER,score:FLOAT`.
