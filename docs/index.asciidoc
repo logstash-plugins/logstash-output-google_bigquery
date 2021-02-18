@@ -340,6 +340,15 @@ BigQuery table separator to be added between the table_prefix and the
 date suffix.
 
 [id="plugins-{type}s-{plugin}-temp_directory"]
+===== `table_name`
+
+  * Value type is <<string,string>>
+  * Default value is `nil`
+
+BigQuery table name to be used when inserting data into an existing table.
+(Useful when using partitioned table)
+
+[id="plugins-{type}s-{plugin}-table_name"]
 ===== `temp_directory`
 
 deprecated[4.0.0, Events are uploaded in real-time without being stored to disk.]
