@@ -1,3 +1,6 @@
+## Unreleased
+ - Updated Google Cloud Storage client library [#n](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/n)
+
 ## 4.1.5
  - [DOC] Updated links to use shared attributes [#61](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/61)
 
