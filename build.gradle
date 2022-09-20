@@ -37,7 +37,7 @@ dependencies {
     implementation "io.grpc:grpc-context:1.39.0"
     implementation "io.opencensus:opencensus-contrib-http-util:0.28.0"
     implementation "com.google.http-client:google-http-client-jackson2:1.39.2"
-    implementation "com.fasterxml.jackson.core:jackson-core:2.12.4"
+    implementation "com.fasterxml.jackson.core:jackson-core:2.13.3"
     implementation "com.google.http-client:google-http-client:1.39.2"
     implementation "org.apache.httpcomponents:httpclient:4.5.13"
     implementation "commons-logging:commons-logging:1.2"
