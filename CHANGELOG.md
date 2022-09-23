@@ -1,3 +1,6 @@
+## 4.2.0
+ - Updated Google Cloud Storage client library, needs Logstash `>= 8.3.0` to run [#67](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/67)
+
 ## 4.1.5
  - [DOC] Updated links to use shared attributes [#61](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/61)
 
