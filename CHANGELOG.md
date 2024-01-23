@@ -1,3 +1,6 @@
+## 4.5.0
+ - Updated Google Cloud Storage client library, from `2.31.1` to `2.36.0` [#n](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/n)
+
 ## 4.4.0
  - Updated Google Cloud Storage client library, from `2.26.1` to `2.31.1` [#71](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/71)
 
