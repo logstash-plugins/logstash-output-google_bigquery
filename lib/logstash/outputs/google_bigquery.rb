@@ -84,6 +84,10 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # date suffix.
   config :table_separator, validate: :string, default: '_'
 
+  # BigQuery table name to be used when inserting data into an existing table
+  # (Useful when using partitioned table)
+  config :table_name, validate: :string, required: false, default: nil
+
   # Schema for log data. It must follow the format `name1:type1(,name2:type2)*`.
   # For example, `path:STRING,status:INTEGER,score:FLOAT`.
   config :csv_schema, validate: :string, required: false, default: nil
@@ -179,7 +183,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   def register
     @logger.debug('Registering plugin')
 
-    @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema
+    @schema = LogStash::Outputs::BigQuery::Schema.parse_csv_or_json @csv_schema, @json_schema if @table_name.nil? || @table_name.empty?
     @bq_client = LogStash::Outputs::BigQuery::StreamingClient.new @json_key_file, @project_id, @logger
     @batcher = LogStash::Outputs::BigQuery::Batcher.new @batch_size, @batch_size_bytes
     @stopping = Concurrent::AtomicBoolean.new(false)
@@ -202,6 +206,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   end
 
   def get_table_name(time=nil)
+    return @table_name unless @table_name.nil? || @table_name.empty?
     time ||= Time.now
 
     str_time = time.strftime(@date_pattern)
@@ -236,7 +241,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
       table = get_table_name
       @logger.info("Publishing #{messages.length} messages to #{table}")
 
-      create_table_if_not_exists table
+      create_table_if_not_exists table if @table_name.nil? || @table_name.empty?
 
       failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows)
       write_to_errors_file(failed_rows, table) unless failed_rows.empty?
