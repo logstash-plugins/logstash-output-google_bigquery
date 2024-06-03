@@ -36,10 +36,10 @@ module LogStash
           @bigquery.create table_info
         end
 
-        def append(dataset, table, rows, ignore_unknown, skip_invalid)
+        def append(dataset, table, rows, ignore_unknown, skip_invalid, ignore_insert_ids)
           api_debug("Appending #{rows.length} rows", dataset, table)
 
-          request = build_append_request(dataset, table, rows, ignore_unknown, skip_invalid)
+          request = build_append_request(dataset, table, rows, ignore_unknown, skip_invalid, ignore_insert_ids)
 
           response = @bigquery.insertAll request
           return [] unless response.hasErrors
@@ -62,7 +62,7 @@ module LogStash
           failed_rows
         end
 
-        def build_append_request(dataset, table, rows, ignore_unknown, skip_invalid)
+        def build_append_request(dataset, table, rows, ignore_unknown, skip_invalid, ignore_insert_ids)
           request = com.google.cloud.bigquery.InsertAllRequest.newBuilder dataset, table
           request.setIgnoreUnknownValues ignore_unknown
           request.setSkipInvalidRows(skip_invalid)
@@ -70,7 +70,11 @@ module LogStash
           rows.each { |serialized_row|
             # deserialize rows into Java maps
             deserialized = LogStash::Json.load serialized_row
-            request.addRow deserialized
+            if ignore_insert_ids
+              request.addRow deserialized
+            else
+              request.addRow deserialized["insertId"], deserialized
+            end
           }
 
           request.build

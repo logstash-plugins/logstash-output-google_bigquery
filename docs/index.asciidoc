@@ -94,6 +94,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-error_directory>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-flush_interval_secs>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-ignore_unknown_values>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-ignore_insert_ids>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-json_key_file>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-json_schema>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-key_password>> |<<string,string>>|__Deprecated__
@@ -219,6 +220,28 @@ NOTE: You may want to add a Logstash filter like the following to remove common 
 ----------------------------------
 mutate {
     remove_field => ["@version","@timestamp","path","host","type", "message"]
+}
+----------------------------------
+
+[id="plugins-{type}s-{plugin}-ignore_insert_ids"]
+===== `ignore_insert_ids`
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `true`
+
+BigQuery insertId can be used for de duplication of data.
+If true, insertId field is treated as a BigQuery column
+If false, insertId field is additionally used for de duplication.
+The default value is true.
+
+NOTE: You need to add "insertId" field
+
+[source,ruby]
+----------------------------------
+mutate {
+    add_field => {
+        "insertId" => "%{[unique_id]}"
+    }
 }
 ----------------------------------
 
