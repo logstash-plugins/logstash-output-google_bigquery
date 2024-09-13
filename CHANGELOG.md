@@ -1,5 +1,5 @@
 ## 5.0.0
- - Removed obsolete `key_path` option
+ - Removed obsolete `key_path` option [#75](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/75)
 
 ## 4.5.0
  - Updated Google Cloud Storage client library, from `2.31.1` to `2.36.0` [#72](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/72)
