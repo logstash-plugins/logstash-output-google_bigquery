@@ -1,4 +1,4 @@
-## 5.0.0
+## 4.6.0
  - Removed obsolete `key_path` option [#75](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/75)
 
 ## 4.5.0
