@@ -133,6 +133,11 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
   # ----------------------------------
   config :ignore_unknown_values, validate: :boolean, default: false
 
+  # BigQuery insertId can be used for de duplication of data. When this is set
+  # as true, insertId field is treated as a BigQuery column. When this is set as
+  # false, insertId field is used for de duplication additionally.
+  config :ignore_insert_ids, validate: :boolean, default: true
+
   # Time pattern for BigQuery table, defaults to hourly tables.
   # Must Time.strftime patterns: www.ruby-doc.org/core-2.0/Time.html#method-i-strftime
   config :date_pattern, validate: :string, default: '%Y-%m-%dT%H:00'
@@ -237,7 +242,7 @@ class LogStash::Outputs::GoogleBigQuery < LogStash::Outputs::Base
 
       create_table_if_not_exists table
 
-      failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows)
+      failed_rows = @bq_client.append(@dataset, table, messages, @ignore_unknown_values, @skip_invalid_rows, @ignore_insert_ids)
       write_to_errors_file(failed_rows, table) unless failed_rows.empty?
     rescue StandardError => e
       @logger.error 'Error uploading data.', :exception => e
