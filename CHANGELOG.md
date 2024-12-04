@@ -1,3 +1,6 @@
+## Unreleased
+- Removed `jar-dependencies` dependency [#76](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/76)
+
 ## 4.6.0
  - Removed obsolete `key_path` option [#75](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/75)
 
