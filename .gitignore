@@ -5,4 +5,4 @@ vendor
 .*
 *.iml
 *.log
-.gradle
+.gradlelib/logstash-output-google_bigquery_jars.rb
