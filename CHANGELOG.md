@@ -1,3 +1,6 @@
+## 4.6.1
+  - Re-packaging the plugin [#78](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/78)
+
 ## Unreleased
 - Removed `jar-dependencies` dependency [#76](https://github.com/logstash-plugins/logstash-output-google_bigquery/pull/76)
 
