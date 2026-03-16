@@ -102,6 +102,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-skip_invalid_rows>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-table_prefix>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-table_separator>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-table_name>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-temp_directory>> |<<string,string>>|__Deprecated__
 | <<plugins-{type}s-{plugin}-temp_file_prefix>> |<<string,string>>|__Deprecated__
 | <<plugins-{type}s-{plugin}-uploader_interval_secs>> |<<number,number>>|__Deprecated__
@@ -321,6 +322,15 @@ Table name will be `<table_prefix><table_separator><date>`
 
 BigQuery table separator to be added between the table_prefix and the
 date suffix.
+
+[id="plugins-{type}s-{plugin}-table_name"]
+===== `table_name`
+
+  * Value type is <<string,string>>
+  * Default value is `nil`
+
+BigQuery table name to be used when inserting data into an existing table.
+(Useful when using partitioned table)
 
 [id="plugins-{type}s-{plugin}-temp_directory"]
 ===== `temp_directory`
