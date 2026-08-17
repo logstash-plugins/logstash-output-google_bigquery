@@ -3,6 +3,7 @@ Gemfile.lock
 .bundle
 vendor
 .*
+!.github
 *.iml
 *.log
 .gradlelib/logstash-output-google_bigquery_jars.rb
